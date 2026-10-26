@@ -1,0 +1,1761 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:," />
+<title>发泡缺陷根因推理 Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#0c1015; --bg2:#10151d; --panel:#151b24; --panel2:#1a212d; --line:#26303f;
+  --ink:#e9eef4; --muted:#9fb0c0; --faint:#6d7f92;
+  --amber:#f2a63b; --amber-d:#3a2a12;
+  --teal:#2fc4ae; --teal-d:#0f2f2b;
+  --red:#e5604f; --red-d:#3a1a14;
+  --green:#4cc26e; --green-d:#12291a;
+  --steel:#7fa6c9;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;
+  background-image:radial-gradient(1100px 480px at 85% -80px,rgba(47,196,174,.07),transparent 60%),radial-gradient(900px 420px at -10% 120px,rgba(242,166,59,.05),transparent 55%);}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 18px 70px}
+h1,h2,h3{margin:0;line-height:1.3}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- intro ---------- */
+.intro{border:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));border-radius:10px;padding:20px 22px}
+.intro h1{font-size:24px;font-weight:900;letter-spacing:.5px}
+.intro h1 .accent{color:var(--amber)}
+.intro p.lede{margin:8px 0 0;color:var(--muted);max-width:860px}
+.guide{margin-top:14px;border-left:3px solid var(--teal);background:var(--teal-d);padding:10px 14px;border-radius:0 8px 8px 0}
+.guide b{color:var(--teal)}
+.guide p{margin:2px 0;color:#cfe8e3;font-size:14px}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.stat{border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.stat b{color:var(--ink);font-family:var(--mono);font-size:15px;margin-right:4px}
+
+/* ---------- terms / tooltips ---------- */
+.term{border-bottom:1px dotted var(--amber);cursor:help;position:relative;color:#ffd9a0}
+.term:hover::after,.term:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:130%;z-index:40;width:250px;
+  background:#232d3b;border:1px solid var(--line);color:var(--ink);font-size:13px;line-height:1.55;padding:9px 11px;border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);white-space:normal;font-weight:400}
+
+/* ---------- sections ---------- */
+section.card{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:18px 20px;margin-top:18px}
+.sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.sec-head h2{font-size:18px;font-weight:900}
+.sec-head .sub{color:var(--muted);font-size:13.5px}
+.step-badge{font-family:var(--mono);font-size:12px;color:var(--amber);border:1px solid var(--amber);border-radius:20px;padding:1px 9px}
+
+/* ---------- tabs & inputs ---------- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
+.tab{border:1px solid var(--line);background:var(--bg2);color:var(--muted);border-radius:8px;padding:8px 16px;font-size:14.5px;cursor:pointer;font-family:var(--sans)}
+.tab[aria-selected="true"]{background:var(--amber);border-color:var(--amber);color:#191104;font-weight:700}
+.tabpane{display:none}
+.tabpane.on{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+label.flabel{display:block;font-size:13px;color:var(--muted);margin:0 0 5px}
+select,textarea,input[type="text"],input[type="number"]{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px 11px;font-size:14.5px;font-family:var(--sans)}
+textarea{min-height:96px;resize:vertical}
+select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+.hint{font-size:13px;color:var(--faint);margin-top:6px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:8px;padding:9px 18px;font-size:14.5px;cursor:pointer;font-family:var(--sans)}
+.btn:hover{border-color:var(--steel)}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:#191104;font-weight:800}
+.btn.primary:disabled{opacity:.45;cursor:wait}
+.btn.teal{background:var(--teal);border-color:var(--teal);color:#06231e;font-weight:800}
+.btn.sm{padding:5px 12px;font-size:13px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.preset{border:1px dashed #46566c;background:transparent;color:var(--steel);border-radius:8px;padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:var(--sans)}
+.preset:hover{border-color:var(--amber);color:var(--amber)}
+.parse-out{margin-top:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);padding:12px 14px;display:none}
+.parse-out.on{display:block}
+.parse-text{font-size:15px;line-height:1.9}
+.parse-text mark{background:var(--amber);color:#191104;border-radius:3px;padding:0 3px;font-weight:700}
+.parse-notes{margin:10px 0 0;padding:0;list-style:none}
+.parse-notes li{font-size:13.5px;color:var(--muted);padding:3px 0}
+.parse-notes b{color:var(--amber);font-weight:700}
+.upwrap{display:grid;grid-template-columns:280px 1fr;gap:16px}
+@media(max-width:760px){.upwrap{grid-template-columns:1fr}}
+.drop{border:1.5px dashed #46566c;border-radius:10px;min-height:210px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);padding:14px;position:relative;overflow:hidden;background:var(--bg2)}
+.drop img{max-width:100%;max-height:260px;border-radius:6px;display:block}
+.scanline{position:absolute;left:0;right:0;height:44px;top:-60px;display:none;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(47,196,174,.35),rgba(47,196,174,.75));border-bottom:2px solid var(--teal)}
+.scanning .scanline{display:block;animation:scan 1.1s linear infinite}
+@keyframes scan{0%{top:-60px}100%{top:105%}}
+.sim-note{font-size:12.5px;color:var(--amber);border:1px solid var(--amber-d);background:#241a09;border-radius:6px;padding:5px 9px;display:inline-block;margin-top:8px}
+
+/* ---------- evidence panel ---------- */
+.fact-groups{display:grid;grid-template-columns:1fr 1fr;gap:6px 26px}
+@media(max-width:860px){.fact-groups{grid-template-columns:1fr}}
+.fgroup{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--steel);margin:12px 0 2px;letter-spacing:1px}
+.fact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed #202a38}
+.fact .fname{font-size:14px}
+.fact.auto .fname::after{content:"表型带入";font-size:11px;color:var(--teal);border:1px solid var(--teal);border-radius:10px;padding:0 6px;margin-left:7px;vertical-align:1px}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;flex:none}
+.seg button{border:0;background:var(--bg2);color:var(--faint);font-size:12.5px;padding:4px 10px;cursor:pointer;font-family:var(--sans)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[data-s="hit"].on{background:var(--green);color:#08170d;font-weight:800}
+.seg button[data-s="miss"].on{background:var(--red);color:#1d0a06;font-weight:800}
+.seg button[data-s="none"].on{background:#39465a;color:var(--ink);font-weight:700}
+
+/* ---------- pipeline ---------- */
+.pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+@media(max-width:860px){.pipe{grid-template-columns:1fr 1fr}}
+.pstep{border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:var(--bg2);opacity:.45;transition:all .4s}
+.pstep .pn{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.pstep h3{font-size:15px;margin:2px 0 4px}
+.pstep p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.pstep.active{opacity:1;border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 6px 22px rgba(242,166,59,.12)}
+.pstep.active .pn{color:var(--amber)}
+.pstep.done{opacity:1;border-color:var(--teal)}
+.pstep.done .pn{color:var(--teal)}
+.pstep .verdict{margin-top:6px;font-size:12.5px;color:var(--teal);display:none}
+.pstep.done .verdict{display:block}
+.logbox{margin-top:14px;background:#0a0e13;border:1px solid var(--line);border-radius:9px;height:218px;overflow-y:auto;padding:12px 14px;font-size:13.5px}
+.logbox .lt{color:var(--faint);font-family:var(--mono);font-size:11.5px;margin-right:8px}
+.logbox div{padding:2.5px 0;border-bottom:1px dashed #18202b}
+.logbox .pos{color:var(--green)} .logbox .neg{color:var(--red)} .logbox .key{color:var(--amber);font-weight:700}
+.logbox:empty::before{content:"推理日志会显示在这里：引擎每走一步，都会把「看到了什么、怎么判断的」写下来。";color:var(--faint)}
+
+/* ---------- graph ---------- */
+.graphwrap{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px;overflow:hidden}
+svg text{font-family:var(--sans)}
+.gnode{cursor:pointer}
+.gnode rect{transition:filter .2s}
+.gnode:hover rect{filter:brightness(1.35)}
+.edge{fill:none;stroke-width:2;opacity:.85}
+.explain{margin-top:12px;border:1px solid var(--line);border-left:4px solid var(--steel);border-radius:8px;background:var(--bg2);padding:13px 16px;display:none}
+.explain.on{display:block}
+.explain h3{font-size:16px;margin-bottom:4px}
+.explain h3 .rid{font-family:var(--mono);color:var(--faint);font-size:13px;margin-left:8px}
+.explain p{margin:5px 0;font-size:14px;color:#cfdae5}
+.explain b{color:var(--steel)}
+
+/* ---------- hypotheses ---------- */
+.hypo{border:1px solid var(--line);border-radius:9px;background:var(--bg2);padding:13px 16px;margin-top:10px}
+.hypo.excluded{opacity:.62}
+.hypo-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.hypo-top .rank{font-family:var(--mono);font-weight:700;color:var(--faint);font-size:13px}
+.hypo-top h3{font-size:16.5px}
+.hypo-top .rid{font-family:var(--mono);font-size:12.5px;color:var(--faint)}
+.hypo-top .cat{font-size:12px;border:1px solid var(--line);border-radius:10px;padding:0 8px;color:var(--steel)}
+.tag-near{font-size:12px;color:var(--amber);border:1px solid var(--amber-d);background:#241a09;border-radius:10px;padding:0 8px}
+.tag-out{font-size:12px;color:#ffb3a8;border:1px solid var(--red-d);background:var(--red-d);border-radius:10px;padding:0 8px}
+.scorebar{height:14px;background:#0a0e13;border-radius:7px;margin:10px 0 4px;overflow:hidden;display:flex}
+.scorebar .base{background:#54687f;height:100%}
+.scorebar .gain{background:var(--green);height:100%;transition:width 1s ease}
+.scorebar .fill{height:100%;transition:width 1s ease}
+.scoreline{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.scoreline .big{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--ink)}
+.evlist{margin:9px 0 0;padding:0;list-style:none}
+.evlist li{font-size:13.8px;padding:4px 0 4px 2px;line-height:1.6}
+.evlist .pts{font-family:var(--mono);font-weight:700;border-radius:5px;padding:0 7px;margin-right:7px;white-space:nowrap}
+.evlist .pts.p{background:var(--green-d);color:var(--green)}
+.evlist .pts.m{background:var(--red-d);color:#ff9d8f}
+.evlist .pts.z{background:#39465a;color:var(--ink)}
+.evlist .nodata{color:var(--faint)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- results ---------- */
+.conclusion{border:1px solid var(--teal);background:linear-gradient(180deg,#122723,#101a17);border-radius:10px;padding:16px 19px;font-size:15.5px;line-height:1.85}
+.conclusion h3{color:var(--teal);font-size:15px;letter-spacing:1px;margin-bottom:6px}
+.conclusion .win{color:var(--amber);font-weight:800}
+.top3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+@media(max-width:960px){.top3{grid-template-columns:1fr}}
+.tcard{border:1px solid var(--line);border-top:4px solid var(--steel);border-radius:9px;background:var(--bg2);padding:14px 16px}
+.tcard.first{border-top-color:var(--amber)}
+.tcard h3{font-size:16px;margin:4px 0 2px}
+.tcard .conf{font-family:var(--mono);font-size:26px;font-weight:700}
+.tcard .confl{font-size:12px;color:var(--muted)}
+.tcard ul{margin:8px 0;padding-left:18px;font-size:13.5px;color:#cfdae5}
+.tcard li{padding:1.5px 0}
+.tcard .fix{font-size:13.5px;border-top:1px dashed var(--line);padding-top:8px;margin-top:8px;color:var(--muted)}
+.tcard .fix b{color:var(--teal)}
+.medal{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.checks{margin:6px 0 0;padding:0;list-style:none;counter-reset:ck}
+.checks li{display:flex;gap:12px;padding:11px 4px;border-bottom:1px dashed #202a38;align-items:flex-start}
+.checks .ckn::before{content:counter(ck)}
+.checks .ckn{counter-increment:ck;font-family:var(--mono);font-weight:700;color:var(--amber);border:1px solid var(--amber-d);background:#241a09;border-radius:50%;width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px}
+.checks .cka{font-size:15px;font-weight:600}
+.checks .ckw{font-size:13px;color:var(--muted)}
+.pill{font-size:11.5px;border-radius:9px;padding:0 7px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.pill.cost{color:var(--teal)} .pill.gain{color:var(--amber)}
+.disclaimer{margin-top:18px;font-size:13px;color:var(--faint);border:1px dashed #334154;border-radius:8px;padding:11px 14px;line-height:1.7}
+.runrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.runrow .tip{font-size:13px;color:var(--faint)}
+.empty-note{color:var(--faint);font-size:14px;padding:14px 4px}
+
+/* ---------- 行业知识：体系参数卡 / 工艺窗口 / 杯泡 / 分型 ---------- */
+.subh{font-size:16px;font-weight:800;margin:2px 0 8px}
+.sysgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+@media(max-width:760px){.sysgrid{grid-template-columns:1fr 1fr}}
+.syscell{border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:8px 12px}
+.syscell .k{font-size:12px;color:var(--faint)}
+.syscell .v{font-family:var(--mono);font-size:17px;font-weight:700}
+.syscell .v small{font-size:12px;color:var(--muted);font-family:var(--sans);font-weight:400}
+.srcnote{font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.7}
+.winrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed #202a38;flex-wrap:wrap}
+.winrow .wl{width:104px;font-size:14px;flex:none}
+.winrow .wr{font-family:var(--mono);font-size:14px;color:var(--steel);flex:none}
+.winrow input{width:104px;flex:none;padding:6px 9px}
+.wstat{font-size:12.5px;border-radius:9px;padding:1px 9px;border:1px solid var(--line);color:var(--muted);flex:none}
+.wstat.in{color:var(--green);border-color:var(--green-d);background:var(--green-d)}
+.wstat.out{color:#ffb3a8;border-color:var(--red-d);background:var(--red-d)}
+.wwhy{font-size:13px;color:var(--muted);flex:1;min-width:180px}
+.cuprow{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;background:var(--bg2);padding:12px 14px;margin:4px 0 8px}
+.cuprow .seg{margin-top:2px}
+.cuprow .seg button[data-s="bad"].on{background:var(--red);color:#1d0a06;font-weight:800}
+.cuprow .seg button[data-s="ok"].on{background:var(--green);color:#08170d;font-weight:800}
+.cuprow .seg button[data-s="none"].on{background:#39465a;color:var(--ink);font-weight:700}
+.voidbox{border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:8px;background:var(--bg2);padding:13px 16px;margin-top:14px}
+.voidbox h3{font-size:16px}
+.voidbox .vcode{font-family:var(--mono);color:var(--amber)}
+table.maptable{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+table.maptable th,table.maptable td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+table.maptable th{color:var(--steel);background:var(--bg2);white-space:nowrap}
+.basis{font-size:13px;border-top:1px dashed var(--line);padding-top:8px;margin-top:8px;color:var(--muted);line-height:1.65}
+.basis b{color:var(--steel)} .basis .src{color:var(--faint)}
+.kblist{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted);line-height:1.75}
+.kblist b{color:var(--ink)}
+details.kbdet summary{cursor:pointer;font-size:14.5px;font-weight:700;color:var(--muted)}
+/* ---------- 最新知识补充 v1.1 / 国标锚点修正 ---------- */
+.sup-intro{font-size:13.5px;color:var(--muted);line-height:1.75;border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:11px 14px}
+.sup-intro b{color:var(--amber)}
+.sup-group{margin-top:18px}
+.sup-group>h3{font-size:15.5px;font-weight:800;color:var(--steel);border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px}
+.sup-item{padding:11px 2px;border-bottom:1px dashed #202a38}
+.sup-item:last-child{border-bottom:0}
+.sup-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.sup-id{font-family:var(--mono);font-size:11.5px;color:var(--amber);border:1px solid var(--amber-d);background:#241a09;border-radius:10px;padding:0 7px;flex:none}
+.sup-item h4{font-size:14.5px;margin:0;font-weight:700}
+.sup-find{font-size:13.8px;color:#cfdae5;margin:5px 0;line-height:1.7}
+.sup-meta{font-size:12.8px;color:var(--muted);line-height:1.7;margin:2px 0;word-break:break-word}
+.sup-meta b{color:var(--ink);font-weight:600}
+.sup-meta a{color:var(--teal);word-break:break-all}
+.sup-warn{font-size:13px;color:#ffd9a0;background:#241a09;border:1px solid var(--amber-d);border-radius:7px;padding:7px 10px;margin-top:6px;line-height:1.65}
+.sup-warn b{color:var(--amber)}
+.anchorgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+@media(max-width:760px){.anchorgrid{grid-template-columns:1fr}}
+.anchorbox{border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:12px 14px}
+.anchorbox h3{font-size:14.5px;margin-bottom:5px}
+.anchorbox p{font-size:13.5px;color:var(--muted);margin:4px 0;line-height:1.7}
+.anchorbox p b{color:var(--ink)}
+/* ---------- 证据来源标注 / 海信现场看板 ---------- */
+.srctag{display:inline-block;font-size:12px;font-weight:700;border-radius:5px;padding:0 6px;margin-right:5px;white-space:nowrap;line-height:1.6}
+.tag-ind{color:var(--teal);border:1px solid var(--teal);background:var(--teal-d)}
+.tag-hx{color:var(--amber);border:1px solid var(--amber-d);background:#241a09}
+.tag-gb{color:var(--steel);border:1px solid #33506e;background:#13202f}
+.tag-meas{color:var(--green);border:1px solid #1e4630;background:var(--green-d)}
+.tag-pend{color:#ff9d8f;border:1px solid #7a352b;background:#2a130f}
+.srcdefs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media(max-width:760px){.srcdefs{grid-template-columns:1fr}}
+.srcdef{border:1px solid var(--line);background:var(--bg2);border-radius:8px;padding:10px 13px;font-size:13.5px;color:var(--muted);line-height:1.75}
+.srcdef b{color:var(--ink)}
+table.boardtable{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+table.boardtable th,table.boardtable td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;line-height:1.75}
+table.boardtable th{color:var(--steel);background:var(--bg2);white-space:nowrap}
+table.boardtable td:first-child{width:44%}
+.hx-pos{font-size:13px;color:var(--muted);margin:4px 0 0;line-height:1.7}
+.hx-pos b{color:var(--ink)}
+.pendlist{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted);line-height:1.8}
+.pendlist b{color:var(--ink)}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== 导览 ===================== -->
+  <div class="intro">
+    <h1>冰箱箱体发泡 · 缺陷<span class="accent">根因推理</span>演示</h1>
+    <p class="lede">把缺陷的样子告诉系统，它会像老师傅一样：先看长相列出嫌疑名单，再逐条对照现场证据打分，最后告诉你最可能的原因和先查什么。</p>
+    <div class="guide">
+      <p><b>怎么看这个页面（业务导览）：</b></p>
+      <p>① 先在下面把缺陷描述清楚（选表型 / 写描述 / 传照片，三种方式任选），证据知道多少填多少，不知道就留「无数据」；</p>
+      <p>② 点「开始推理」后，看中间的<b>推理链路</b>一步步往前走，日志会把每一步的判断讲出来；</p>
+      <p>③ 再看<b>因果图</b>谁在领先、<b>评分明细</b>每分是怎么来的；最后看结论解读和「下一步先查什么」。</p>
+    </div>
+    <div class="stats">
+      <span class="stat"><b>75</b>本体类</span>
+      <span class="stat"><b>26</b>条关系</span>
+      <span class="stat"><b>20</b>条种子规则</span>
+      <span class="stat"><b>39</b>个数据属性</span>
+      <span class="stat">知识来源：箱体发泡本体根因模型 v1.0（种子值，上线前需按本厂规程标定）</span>
+      <span class="stat">行业知识已并入：<b>体系参数卡 · 工艺窗口 · 杯泡分流 · 空洞五分型</b>（2026-10-23 行业知识收集报告）</span>
+      <span class="stat">最新补充：<b>知识包 v1.1 · 2026-10-24 第一期 15 条</b>（无损检测 / 数字化监控 / HFO / 标准与排气，见页末栏目，只作展示与核查指引，不参与打分）</span>
+    </div>
+  </div>
+
+  <!-- ===================== 输入 ===================== -->
+  <section class="card" id="inputCard">
+    <div class="sec-head"><span class="step-badge">输入</span><h2>第一步：把缺陷描述清楚</h2><span class="sub">三种方式任选其一，最后都会变成统一的「表型 + 证据」，推理引擎只认这一套输入。</span></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="form">① 结构化表型</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="text">② 文字描述</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="img">③ 缺陷图片</button>
+    </div>
+
+    <div class="tabpane on" id="pane-form">
+      <div class="grid2">
+        <div>
+          <label class="flabel" for="selPheno">缺陷表型（<span class="term" tabindex="0" data-tip="「表型」就是缺陷看得见的样子：长在哪、什么形状、怎么分布。同是空洞，表型不同，原因完全不同——这是推理的起点。">什么是表型？</span>）</label>
+          <select id="selPheno"></select>
+        </div>
+        <div>
+          <label class="flabel" for="selRegion">出现区域</label>
+          <select id="selRegion">
+            <option value="">— 还没确认 —</option>
+            <option value="high">顶部 / 背部 · 模具最高点区域</option>
+            <option value="far">远离注料口的一端</option>
+            <option value="mid">泡层中部</option>
+            <option value="intf">沿内胆界面</option>
+            <option value="other">其他区域（非最高点）</option>
+          </select>
+        </div>
+        <div>
+          <label class="flabel" for="selDist">分布方式</label>
+          <select id="selDist">
+            <option value="">— 还没确认 —</option>
+            <option value="single">孤立单个</option>
+            <option value="samecav">同一位置连续多台出现</option>
+            <option value="disp">弥散多处、遍布泡层</option>
+            <option value="stripe">条纹状 / 云雾状</option>
+            <option value="intf">沿界面成片</option>
+          </select>
+        </div>
+        <div>
+          <label class="flabel" for="selWall">剖切内壁形态</label>
+          <select id="selWall">
+            <option value="">— 未剖切 / 未知 —</option>
+            <option value="smooth">光滑</option>
+            <option value="tear">不规则撕裂状</option>
+            <option value="coarse">泡孔粗大、并泡</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">提示：区域、分布、内壁这三项选了以后，会自动同步到下面的证据区（标有「表型带入」），不用重复填。</p>
+    </div>
+
+    <div class="tabpane" id="pane-text">
+      <label class="flabel" for="txtDesc">用大白话描述缺陷（检验记录、班组交接里的话就行）</label>
+      <textarea id="txtDesc" placeholder="例如：剖切发现箱体顶部有个大空洞，内壁光滑，同一个模腔连着三台都在同一位置，排气孔保养已经逾期了。"></textarea>
+      <div style="margin-top:10px"><button class="btn teal" id="btnParse">解析这段描述</button></div>
+      <div class="parse-out" id="parseOut">
+        <div class="parse-text" id="parseText"></div>
+        <ul class="parse-notes" id="parseNotes"></ul>
+      </div>
+    </div>
+
+    <div class="tabpane" id="pane-img">
+      <div class="upwrap">
+        <div class="drop" id="dropBox">
+          <div id="dropHint">点击选择剖切 / 缺陷照片<br /><span style="font-size:12.5px">（照片只在本机预览，不上传）</span></div>
+          <img id="upImg" alt="上传的缺陷照片预览" style="display:none" />
+          <div class="scanline"></div>
+        </div>
+        <div>
+          <input type="file" id="fileInp" accept="image/*" />
+          <span class="sim-note">Demo 说明：本页面的图像识别是模拟的，实际项目需接入视觉模型训练后才能自动分型。</span>
+          <div id="imgResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="presets">
+      <span style="font-size:13.5px;color:var(--muted);align-self:center">不想填？直接套用一个真实感案例：</span>
+      <button class="preset" data-preset="vent">案例一 · 排气孔堵塞（顶部光滑大空洞）</button>
+      <button class="preset" data-preset="meter">案例二 · 计量漂移充填不足（称重偏低）</button>
+      <button class="preset" data-preset="moldtemp">案例三 · 模温过低弥散空洞（冬季首班）</button>
+    </div>
+  </section>
+
+  <!-- ===================== 行业知识 ===================== -->
+  <section class="card">
+    <div class="sec-head"><span class="step-badge">知识</span><h2>体系参数卡与工艺窗口速查</h2><span class="sub">来自行业知识收集报告（厂商资料 / 专利 / 标准公开来源）。核心纪律：<b>反应性阈值必须绑体系</b>——同一个「凝胶时间」，换个体系，正常范围完全不同。</span></div>
+    <div class="grid2">
+      <div>
+        <h3 class="subh">体系参数卡</h3>
+        <label class="flabel" for="selSystem">当前使用的原料体系（选错卡，比对全错）</label>
+        <select id="selSystem"></select>
+        <div id="sysCard"></div>
+        <p class="srcnote">现场用法：当班杯泡测得的乳白 / 凝胶时间，只和本卡的同体系基线比对；真正要报警的是<b>同体系、同温度下的系统性漂移</b>（如凝胶明显缩短 → 流动距离变短 → 远端空洞风险上升），不是跨体系比绝对值。</p>
+      </div>
+      <div>
+        <h3 class="subh">工艺窗口速查（多来源交叉的通用范围）</h3>
+        <div id="winList"></div>
+        <p class="srcnote"><b>参考窗口，非判废线：</b>以上是多来源交叉一致的通用范围，正式判定以本厂体系参数卡与工艺规程为准。填入实测值，可即时看偏离方向与通俗后果。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 证据 ===================== -->
+  <section class="card">
+    <div class="sec-head"><span class="step-badge">证据</span><h2>第二步：现场证据确认</h2><span class="sub">每条证据三种状态：<b style="color:var(--green)">命中</b>=确实观察到；<b style="color:#ff9d8f">未命中</b>=查过了、没有；<b>无数据</b>=还没查。查过没有和没查过，对推理的意义完全不同——这正是老师傅说的「排除证据」。</span></div>
+    <div class="cuprow">
+      <div style="flex:1;min-width:240px"><b>杯泡分流试验</b><div class="hint" style="margin-top:2px">排查第一刀：剖切分型后先打一杯泡。<b style="color:#ff9d8f">杯泡也异常</b> → 问题在出枪之前（料 / 配比 / 混合 / 料温）；<b style="color:var(--green)">杯泡正常</b> → 去查模具 / 排气 / 注料。选定后，推理会给对应一侧的嫌疑 +10 分，并在评分明细里写明理由。</div></div>
+      <span class="seg" id="cupSeg" role="group" aria-label="杯泡试验结果">
+        <button data-s="none" class="on">未做</button><button data-s="ok">杯泡正常</button><button data-s="bad">杯泡异常</button>
+      </span>
+    </div>
+    <div class="fact-groups" id="factGroups"></div>
+    <div class="runrow">
+      <button class="btn primary" id="btnRun" style="font-size:16.5px;padding:12px 34px">开始推理 →</button>
+      <button class="btn" id="btnReset">清空重填</button>
+      <span class="tip">推理全程在本页面内完成，规则与打分逻辑就是模型文档第 6、7 节的那套种子规则。</span>
+    </div>
+  </section>
+
+  <!-- ===================== 推理链路 ===================== -->
+  <section class="card" id="pipeCard">
+    <div class="sec-head"><span class="step-badge">过程</span><h2>推理链路：引擎是怎么一步步想的</h2></div>
+    <div class="pipe" id="pipe">
+      <div class="pstep" data-step="1"><div class="pn">STEP 1 / 6</div><h3>表型识别</h3><p>先把缺陷的「长相」定准：是哪一类空洞、长在哪里、什么形态。长相定错，后面全错。</p><div class="verdict"></div></div>
+      <div class="pstep" data-step="2"><div class="pn">STEP 2 / 6</div><h3>杯泡分流</h3><p>先打一杯泡把问题切成两半：杯泡也异常，问题在出枪之前（料/配比/混合/料温）；杯泡正常，去查模具、排气、注料。对应一侧的嫌疑 +10 分。</p><div class="verdict"></div></div>
+      <div class="pstep" data-step="3"><div class="pn">STEP 3 / 6</div><h3>假设生成</h3><p>根据长相列出嫌疑名单——就像老师傅先在脑子里把可能的原因过一遍，一个不落。</p><div class="verdict"></div></div>
+      <div class="pstep" data-step="4"><div class="pn">STEP 4 / 6</div><h3>证据取证</h3><p>拿现场证据逐条对照每个嫌疑：对得上是支持，对不上是排除，没查的是缺口。</p><div class="verdict"></div></div>
+      <div class="pstep" data-step="5"><div class="pn">STEP 5 / 6</div><h3>评分排序</h3><p>每个嫌疑先按历史占比给一个起步分（<span class="term" tabindex="0" data-tip="「先验」= 还没看这次证据之前，光凭历史经验，这个原因的可能性有多大。比如困气型空洞里，排气孔堵塞历史上占三成多，起步分就高。">先验分</span>），支持证据加分，排除证据重扣，算总分排名。</p><div class="verdict"></div></div>
+      <div class="pstep" data-step="6"><div class="pn">STEP 6 / 6</div><h3>核查推荐</h3><p>分数接近分不清时，推荐「下一步先查什么」：专挑成本低、又最能区分前两名嫌疑的检查；还没做杯泡时，杯泡分流试验排第一。</p><div class="verdict"></div></div>
+    </div>
+    <div class="logbox" id="logBox" aria-live="polite"></div>
+  </section>
+
+  <!-- ===================== 因果图 ===================== -->
+  <section class="card">
+    <div class="sec-head"><span class="step-badge">图谱</span><h2>因果图：缺陷 ← 嫌疑原因</h2><span class="sub">左边是这次缺陷，右边是嫌疑名单。连线越亮、节点越绿，嫌疑越大；变灰的是被证据排除掉的。<b>点击任意原因节点</b>，看它的大白话解释。</span></div>
+    <div class="graphwrap"><svg id="graph" width="100%" role="img" aria-label="因果关系图"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--green)"></i>得分 ≥ 60 · 高度可疑</span>
+      <span><i style="background:var(--amber)"></i>30–59 · 有嫌疑，需核查</span>
+      <span><i style="background:#54687f"></i>1–29 · 可能性低</span>
+      <span><i style="background:#39465a"></i>0 分 · 已被证据排除</span>
+    </div>
+    <div class="explain" id="explainBox"></div>
+  </section>
+
+  <!-- ===================== 评分明细 ===================== -->
+  <section class="card">
+    <div class="sec-head"><span class="step-badge">评分</span><h2>评分明细：每一分是怎么来的</h2><span class="sub">打分规则写死在明处：起步分 = 历史占比 × 100；每条支持证据 +10~20 分；每条排除证据 −25 分；碰上「一票否决」的强排除证据，直接归零。</span></div>
+    <div id="hypoList"><p class="empty-note">还没有推理结果。填好上面的表型和证据，点「开始推理」，这里会把每个嫌疑的加减分理由逐条列出来。</p></div>
+  </section>
+
+  <!-- ===================== 结论 ===================== -->
+  <section class="card" id="resultCard" style="display:none">
+    <div class="sec-head"><span class="step-badge">结论</span><h2>推理结论</h2></div>
+    <div class="conclusion"><h3>结论解读（老师傅口头汇报版）</h3><div id="conclusionText"></div></div>
+    <div id="voidType"></div>
+    <details style="margin-top:10px">
+      <summary style="cursor:pointer;font-size:13.5px;color:var(--muted)">展开看：空洞分型判定映射表（报告 §3 五分型 + 表面针孔，系统就是按这张表判的）</summary>
+      <table class="maptable">
+        <tr><th>分型</th><th>形态指纹（一句话认型）</th><th>对应本体表型</th><th>本 Demo 的判定入口</th></tr>
+        <tr><td><b>3A 困气型</b></td><td>位置高度重复，多在料流末端/高点，孔壁光滑</td><td>V-GAS</td><td>选了困气型表型；最高点/光滑/同腔连发等证据佐证</td></tr>
+        <tr><td><b>3B 充填不足型</b></td><td>伴整体或远端密度偏低、未贴壁，补料后消失</td><td>V-FILL（溢料缺料为 L）</td><td>选了充填不足/溢料缺料表型；称重偏低/远端空缺佐证</td></tr>
+        <tr><td><b>3C 混合不良型</b></td><td>不规则大孔与致密区交错、条纹，杯泡同样异常</td><td>V-MIX</td><td>选了混合不良表型；弥散型带条纹证据或杯泡异常时也细分到此</td></tr>
+        <tr><td><b>3D 水分/污染并泡型</b></td><td>泡孔粗大悬殊、孔壁破裂连通，密度低但发脆</td><td>V-CELL</td><td>选了泡孔型表型；弥散型带并泡证据时也细分到此</td></tr>
+        <tr><td><b>3E 收缩型</b></td><td>出模不明显、冷却/放置后才出现，时间依赖性</td><td>V-SHRINK</td><td>选了收缩型表型；撕裂状/固化被压缩佐证</td></tr>
+        <tr><td><b>3F 表面针孔/鼓泡</b></td><td>泡沫表面的针孔/鼓泡：裹气、污染成核、脱模剂不相容、模具表面水分</td><td>本体暂无独立表型代码</td><td>界面型表型且呈表面针孔形态时提示，不强行套号</td></tr>
+      </table>
+    </details>
+    <div class="top3" id="top3"></div>
+    <h3 style="margin-top:22px;font-size:16.5px">下一步先查什么（按「最能分清嫌疑 × 成本最低」排序）</h3>
+    <ol class="checks" id="checkList"></ol>
+    <div class="disclaimer">演示说明：本页为根因推理 Demo，内置的是模型 v1.0 的 20 条种子规则，阈值与先验分均为行业常见量级的示例值，正式上线前必须用本厂工艺规程和 50–100 个历史闭环案例回测标定。系统给的是「带证据的嫌疑排序」，不是自动判责——最终根因以现场核查和专家确认为准，确认结果应回写案例库、反过来修正规则分数（这就是模型里说的闭环）。体系参数卡、工艺窗口与空洞分型来自 2026-10-23 行业知识收集报告，数值为绑体系的典型值或通用参考窗口，不是判废线；无可靠出处的项目见页末「知识空白」。</div>
+  </section>
+
+  <!-- ===================== 最新知识补充 v1.1 ===================== -->
+  <section class="card" id="supplementCard">
+    <div class="sec-head"><span class="step-badge">新知识</span><h2>最新知识补充（2026-10-24 第一期 · 知识包 v1.1）</h2><span class="sub">共 15 条，按无损检测、数字化监控、HFO 发泡剂、标准与排气分组。每条写清结论、数值性质、可信度、适用边界和来源。</span></div>
+    <p class="sup-intro"><b>本栏定位：</b>只作展示与核查指引，<b>不新增影响打分的证据项或权重</b>，不改变原有 20 条种子规则、打分公式、预设案例与排名。条目里的数字是什么性质（典型值 / 专利实施例 / 厂商宣称 / 预印本等），就只能按那个性质用，不得升级为本厂判废线。</p>
+
+    <div class="sup-group">
+      <h3>一、无损检测（5 条）</h3>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">NDT-01</span><h4>微焦点 X 射线 CT 定量分析 PU 泡沫内部空洞</h4></div>
+        <p class="sup-find">结论：微焦点 X 射线 CT 可同时分析 PU 泡沫内部空洞的体积与壁厚，并分析粘接界面不均匀与空洞；切割检查会改变空洞形状或粘接状态，因此宜用无损方式复核。</p>
+        <p class="sup-meta"><b>数值性质：</b>定性方法（厂商应用实例）　<b>可信度：</b>中（厂商应用笔记）</p>
+        <p class="sup-meta"><b>适用边界：</b>离线 / 实验室验证用，不等同于整箱在线检测；对剖切结论有争议的案例，优先建议 CT 复核，而非仅凭切割面形态定性。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://www.shimadzu.com/an/topics/campaign/apl/24788/index.html" target="_blank" rel="noopener">岛津微焦点 X 射线 CT 应用实例</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">NDT-02</span><h4>脉冲 / 锁相红外热像探测泡沫夹层内部空洞与分层</h4></div>
+        <p class="sup-find">结论：主动式红外热像中，内部存在空洞或分层时，缺陷上方因边缘效应出现局部高温区；2024 年《红外技术》论文在 1.0 mm 蒙皮泡沫夹层试件上对比了脉冲激励（125 帧）与锁相激励（128 帧）两种算法。</p>
+        <p class="sup-meta"><b>数值性质：</b>研究方法与试件条件（非冰箱箱体实测）　<b>可信度：</b>高（同行评议期刊论文）</p>
+        <p class="sup-meta"><b>适用边界：</b>研究对象为软质泡沫夹层复合材料，非冰箱硬泡箱体；机理可作定性参考，整箱应用前须用本厂箱体做验证试验，不得直接套用检出率。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://www.researching.cn/ArticlePdf/m00062/2024/46/11/14.pdf" target="_blank" rel="noopener">《红外技术》2024 年论文（PDF）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">NDT-03</span><h4>检测手段选择：按缺陷物理特征与深度选，不默认可见光</h4></div>
+        <p class="sup-find">结论：可见光成像不足以检出主要表现为温度、光谱 / 材料差异或内部结构的缺陷；脉冲热像结合深度学习可做内部缺陷分割，X 射线成像适用于不透明部件内部的空洞与孔隙；手段选择应跟随缺陷的物理特征与深度。</p>
+        <p class="sup-meta"><b>数值性质：</b>方法论结论（综述）　<b>可信度：</b>高（综述论文）</p>
+        <p class="sup-meta"><b>适用边界：</b>通用方法论，适用于核查动作选型：表面缺陷 → 可见光视觉；疑似内部空洞 → 热像筛查或 X 射线 / 超声。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://www.mdpi.com/2673-8392/6/9/194" target="_blank" rel="noopener">AI 视觉工业检测综述（MDPI）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">NDT-04</span><h4>泡沫 AI 视觉只覆盖表面，内部缺陷仍需超声 / X 射线</h4></div>
+        <p class="sup-find">结论：泡沫材料 AI 检测厂商资料明确，内部缺陷（分层、孔隙、内裂）需要超声、X 射线等无损检测；表面视觉仅覆盖表面与轮廓；新兴行业缺陷标准尚在形成，建议早期试样阶段就建样本库与判定基线。</p>
+        <p class="sup-meta"><b>数值性质：</b>厂商技术资料口径　<b>可信度：</b>中（厂商资料）</p>
+        <p class="sup-meta"><b>适用边界：</b>用于纠正「AI 视觉全检」的过度宣传；样本库建议可用于回测案例积累。</p>
+        <div class="sup-warn"><b>重点警示：</b>表面视觉通过 <b>不得作为排除内部空洞的强排除证据</b>；内部空洞的排除证据只能来自剖切、CT、超声或热像复核。表面完好但怀疑内部空洞 / 分层时，先用热像筛查或 CT / 超声，阳性结果仍需剖切或 CT 确认。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://en.nitr.cn/materials/foam-material.html" target="_blank" rel="noopener">泡沫材料 AI 检测厂商技术资料</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">NDT-05</span><h4>HMRF-U-Net 无监督分割 PU 泡沫微 CT（2025 预印本）</h4></div>
+        <p class="sup-find">结论：KIT 团队 2025 年预印本提出 HMRF-U-Net：无需真值标签即可对 PU 泡沫微 CT 图像实现高精度分割，并提出预训练策略以大幅减少训练分割模型所需的标注数据量。</p>
+        <p class="sup-meta"><b>数值性质：</b>研究方法（预印本，未经同行评议）　<b>可信度：</b>高（研究机构预印本，标注「未同行评议」）</p>
+        <p class="sup-meta"><b>适用边界：</b>只是离线泡孔 / 空洞定量分析的<b>技术储备</b>，整箱级应用未经验证，当前不得作为已验证的产线检测手段入库；未来若建 CT 样本库，可借其无监督分割降低标注成本。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://arxiv.org/html/2511.11378" target="_blank" rel="noopener">arXiv 预印本 2511.11378</a></p></div>
+    </div>
+
+    <div class="sup-group">
+      <h3>二、数字化监控（3 条）</h3>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">DIG-01</span><h4>座椅发泡 CNN 缺陷模型：混合头处传感 + 质量偏差标定</h4></div>
+        <p class="sup-find">结论：汽车座椅 PU 发泡研究在混合头最近处装流量、压力、温度传感器采集双组分数据，单次发泡 1.11 秒取均值；缺陷标定以成品质量偏离参考值 ±3% 为界，CNN 缺陷检测准确率 98.33%。</p>
+        <p class="sup-meta"><b>数值性质：</b>跨域研究数据（汽车座椅泡沫，非冰箱箱体）　<b>可信度：</b>高（同行评议论文）</p>
+        <div class="sup-warn"><b>重点警示：</b>传感器布点（混合头最近处）与「以质量偏差定义缺陷标签」的思路可迁移，但 <b>±3% 与 98.33% 不得直接套用于冰箱箱体</b>；冰箱箱体的预警阈值必须用本厂历史数据重标。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://www.mdpi.com/2227-7390/11/24/4894" target="_blank" rel="noopener">座椅发泡 CNN 研究（MDPI Mathematics）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">DIG-02</span><h4>EP4257325 / EP4257327：成像 + 机器学习预测泡沫参数并反馈工艺</h4></div>
+        <p class="sup-find">结论：两件欧洲专利提出，发泡中 / 发泡后即刻或切割后、冷却至室温前，用红外或光学成像采集泡沫图像，训练好的机器学习模块对切面泡孔结构做二维分割以预测泡沫参数；另一件据此生成控制信号以调整连续块状泡沫生产工艺参数。</p>
+        <p class="sup-meta"><b>数值性质：</b>专利（2023 年公开）　<b>可信度：</b>专利文献</p>
+        <div class="sup-warn"><b>重点警示：</b>这是连续块状泡沫工艺专利，冰箱箱体为模塑间歇工艺；「成像 → 分割 → 参数预测 → 调参」只作<b>远期架构参考</b>，控制信号的具体实现不得照搬，当前仍以离线核查动作为主。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://patentimages.storage.googleapis.com/89/58/63/1ee9bdee0313b6/EP4257325A1.pdf" target="_blank" rel="noopener">EP4257325A1（PDF）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">DIG-03</span><h4>真空辅助发泡（VAI）细化：减压维持至凝胶形成闭孔泡沫</h4></div>
+        <p class="sup-find">结论：EP2386585 细化基线 VAI 条目：腔体减压至少维持到凝胶形成闭孔硬质 PU 泡沫；该体系密度 28–40 kg/m³、平均泡孔直径小于约 250 μm、10 ℃ 平均板温下导热系数小于约 19 mW/m·K（ISO 12939 / DIN 52612）。</p>
+        <p class="sup-meta"><b>数值性质：</b>专利实施例　<b>可信度：</b>专利文献</p>
+        <div class="sup-warn"><b>重点警示：</b>该导热数<b>未注明初始 / 长期</b>，且测试方法与国标方法不同，<b>不得与国标方法限值直接比对</b>（详见下方国标锚点修正栏）；密度 / 泡径 / 导热三数仅作该专利体系参照。工艺卡可补记的只有「减压维持至凝胶」这一时序要点。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://data.epo.org/publication-server/rest/v1.2/patents/EP2386585NWA1/document.html" target="_blank" rel="noopener">EP2386585（EPO 公开文本）</a></p></div>
+    </div>
+
+    <div class="sup-group">
+      <h3>三、HFO 发泡剂（4 条）</h3>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">HFO-01</span><h4>Solstice LBA（1233zd）厂商宣称的整机能耗收益</h4></div>
+        <p class="sup-find">结论：供应商文章宣称，Solstice LBA 体系泡沫导热优于 245fa 与环戊烷体系，同型号冰箱整机能耗比 245fa 体系低 3%、比环戊烷体系低 7%。</p>
+        <p class="sup-meta"><b>数值性质：</b>厂商宣称（非独立实测）　<b>可信度：</b>中（供应商文章）</p>
+        <div class="sup-warn"><b>重点警示：</b>这只是<b>厂商宣称</b>，不得作为本厂能效承诺；换体系论证时可列为宣称收益项，同时标注「须本厂实测」。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://www.polyether-factory.com/archives/7519" target="_blank" rel="noopener">Solstice LBA 供应商文章</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">HFO-02</span><h4>1233zd / 烃类复配：导热随烃比例上升，高温尺寸稳定性更优</h4></div>
+        <p class="sup-find">结论：EP2788415 实施例数据：1233zd 与异戊烷 / 正戊烷 / 环戊烷复配时，初始导热系数随烃类摩尔占比上升而上升（纯 1233zd 最低）；1233zd 复配泡沫在高温环境下的尺寸稳定性比纯烃类泡沫好 50% 以上（专利表述）。</p>
+        <p class="sup-meta"><b>数值性质：</b>专利实施例　<b>可信度：</b>专利文献</p>
+        <p class="sup-meta"><b>适用边界：</b>复配比例是导热与尺寸稳定性的权衡变量，换体系时须按比例重建参数卡；复配体系缺陷排查先确认复配比例是否漂移——比例漂移可同时解释导热漂移与高温尺寸问题。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://patents.google.com/patent/EP2788415A1/en" target="_blank" rel="noopener">EP2788415A1（Google Patents）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">HFO-03</span><h4>中国冰箱路径判断：环戊烷可能长期保留，HFO 主要面向出口</h4></div>
+        <p class="sup-find">结论：行业分析指出，HCFC-141b 在中国加速淘汰后，冰箱、冷柜可能因环戊烷价格相对低而长期继续使用环戊烷 / 环异戊烷体系，HFO 体系产品主要出口至发达国家和地区。</p>
+        <p class="sup-meta"><b>数值性质：</b>行业分析判断　<b>可信度：</b>中（行业文章）</p>
+        <p class="sup-meta"><b>适用边界：</b>仅作知识库建设优先级判断：国内线以环戊烷体系为主卡，HFO 体系作出口线备卡；出口线换 HFO 时单独建卡，不得共用阈值。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://7cfindustries.com/it/wp-json/wp/v2/posts/2155" target="_blank" rel="noopener">行业分析文章（7CF）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">HFO-04</span><h4>异构体警示：1233zd(E) 与 1233zd(Z) 不得混用数据</h4></div>
+        <p class="sup-find">结论：基线称 Solstice LBA（1233zd(E)）为 A1 不可燃；本期检索中关于 1233zd(Z) 的市场资料讨论了其可燃性管理问题。两者是不同异构体，其安全与工艺数据不得互换；本期未采纳任何把 (Z) 异构体可燃性数据套用于 (E) 体系的表述。</p>
+        <p class="sup-meta"><b>数值性质：</b>方法警示（无新增数值）　<b>可信度：</b>高（异构体区分属化学基本事实，结合基线与检索资料）</p>
+        <div class="sup-warn"><b>重点警示：</b><b>1233zd(E) / (Z) 异构体数据不得互换。</b>所有 1233zd 条目入库时必须标注 (E) / (Z)；未标注异构体的来源一律降级引用，异构体不明的数据不得进入阈值字段。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://www.danfoss.com/zh-cn/about-danfoss/our-businesses/cooling/refrigerants-and-energy-efficiency/refrigerants-for-lowering-the-gwp/" target="_blank" rel="noopener">Danfoss 制冷剂与能效资料页</a></p></div>
+    </div>
+
+    <div class="sup-group">
+      <h3>四、标准与排气（3 条）</h3>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">PAT-01</span><h4>CN112175158B：冰箱硬泡环戊烷绝热短板与异氰酸酯配比</h4></div>
+        <p class="sup-find">结论：该冰箱硬泡专利指出，环戊烷发泡剂环保、无卤、与 HIPS / ABS 相容性好，但制得泡沫绝热性能相对差、能耗高，难以满足日益提高的家电能效标准；其实施工艺中异氰酸酯与（多元醇组合物等）其余组分之和的质量比为 1.15–1.30 : 1。</p>
+        <p class="sup-meta"><b>数值性质：</b>专利实施例　<b>可信度：</b>专利文献</p>
+        <div class="sup-warn"><b>重点警示：</b>该<b>质量比 1.15–1.30 : 1 与摩尔指数口径不同，不得换算混用</b>；它与基线指数窗口 105–130 只是方向一致。环戊烷体系能效投诉回溯时，可把「绝热短板」列为体系固有约束，先查密度 / 导热再怀疑工艺漂移。</div>
+        <p class="sup-meta"><b>来源：</b><a href="https://patents.google.com/patent/CN112175158B/en" target="_blank" rel="noopener">CN112175158B（Google Patents）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">STD-01</span><h4>GB/T 26689—2024 修订要点（前言，仍无表 5.2 数值）</h4></div>
+        <p class="sup-find">结论：标准前言确认 2024 版主要技术变化：增加术语和定义；「导热系数」改为「初始导热系数」并更改指标要求；新增长期导热系数性能要求和检测方法；更改压缩强度 / 10% 形变压缩应力与表观芯密度指标要求；导热试验方法更改；粘结强度测定由规范性附录改为资料性附录。</p>
+        <p class="sup-meta"><b>数值性质：</b>标准前言（定性修订说明，无限值数字）　<b>可信度：</b>高（标准原文前言）</p>
+        <p class="sup-meta"><b>适用边界：</b>引用导热指标时必须区分「初始」与「长期」两个口径（详见下方国标锚点修正栏）；限值数字仍未取得，见知识空白。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://max.book118.com/try_down/487063131111006155.pdf" target="_blank" rel="noopener">GB/T 26689—2024 公开预览文本（PDF）</a></p></div>
+
+      <div class="sup-item"><div class="sup-head"><span class="sup-id">VENT-01</span><h4>冰箱 PU 排气孔布置专利口径：内箱接缝区多孔 + 孔间距</h4></div>
+        <p class="sup-find">结论：JP2016075393A（冰箱专利）：内箱两侧面与背面在泡沫接缝区附近各设 2 个以上发泡气体排气孔，实施例孔中心间距 80 mm，发明人认知范围约 15–125 mm 内可均衡排气；夹具内设减压泵经软管抽吸发泡气体。</p>
+        <p class="sup-meta"><b>数值性质：</b>专利实施例（孔布置，非模具排气槽尺寸）　<b>可信度：</b>专利文献</p>
+        <p class="sup-meta"><b>适用边界：</b>这是<b>内箱排气孔的布置口径，不是模具排气槽的深 × 宽尺寸</b>；困气排查可新增一问「内箱接缝区排气孔是否被堵 / 数量是否合规」，但不得用 15–125 mm 间距反推模具槽尺寸，槽尺寸空白仍未填补（见知识空白）。</p>
+        <p class="sup-meta"><b>来源：</b><a href="https://patents.google.com/patent/JP2016075393A/en" target="_blank" rel="noopener">JP2016075393A（Google Patents）</a></p></div>
+    </div>
+  </section>
+
+  <!-- ===================== 国标锚点修正 ===================== -->
+  <section class="card" id="anchorCard">
+    <div class="sec-head"><span class="step-badge">国标</span><h2>国标锚点修正（GB/T 26689—2024 交叉验证）</h2><span class="sub">以 GB/T 26689—2024 为主锚点，与公开资料交叉验证，冲突时以标准为准；本栏只修正引用口径，不改变打分。</span></div>
+    <div class="anchorgrid">
+      <div class="anchorbox"><h3>导热必须分初始与长期</h3>
+        <p>2024 版把「导热系数」改为<b>「初始导热系数」</b>，并<b>新增长期导热系数</b>性能要求和检测方法。今后任何导热数值入库必须写明是初始、长期、还是未注明三者之一；回测与检测报告核对时先确认被测口径，避免口径错配造成误判。DIG-03 的 VAI 导热数未注明初始 / 长期且方法不同（ISO 12939 / DIN 52612，国标为 GB/T 10295），<b>不得与国标方法限值直接比对</b>。</p></div>
+      <div class="anchorbox"><h3>1233zd 体系默认归 Ⅲ 类</h3>
+        <p>按标准第 3.1 条，低沸点组分须沸点 &lt; 0 ℃（CO₂ 除外）。<b>1233zd(E) 沸点约 19 ℃、(Z) 约 38 ℃，均非低沸点组分</b>。因此纯 1233zd 及 1233zd + 烃类复配，在未确认含低于 0 ℃ 物理发泡剂前<b>默认归 Ⅲ 类</b>。<b>Ⅱ 类成立条件：</b>低沸点组分含量大于 1%（以组合多元醇计）——须见配方才可判定。</p></div>
+      <div class="anchorbox"><h3>粘结强度引用写法</h3>
+        <p>附录 A（粘结强度测定方法）2024 版由规范性改为<b>资料性</b>。引用时统一写<b>「按附录 A（资料性）方法测定」</b>，<b>不得称强制要求值</b>；若未来表 5.2 或其他条款给出粘结性能限值，待原文补齐后再引用。</p></div>
+      <div class="anchorbox"><h3>表 5.2 限值仍空白</h3>
+        <p><b>GB/T 26689—2024 表 5.2 的具体限值数字仍未取得</b>，公开渠道未取得标准原文该表。本页出现的密度 / 导热 / 压缩强度量级均为厂商体系典型值或专利实施例，<b>不冒充标准限值</b>，正式判定请查标准原文。</p></div>
+    </div>
+  </section>
+
+  <!-- ===================== 知识空白 ===================== -->
+  <section class="card">
+    <details class="kbdet">
+      <summary>知识空白：这些数值 Demo 故意不给（无可靠公开出处，提示人工核查）</summary>
+      <ul class="kblist">
+        <li><b>内箱接缝区排气孔布置（已有专利实施例口径，但只是孔布置）</b>：JP2016075393A 给出内箱接缝区每区 2 个以上排气孔、实施例孔间距 80 mm、发明人范围约 15–125 mm——这只是<b>孔布置</b>，可作困气排查的核查问项（见上方 VENT-01）。</li>
+        <li><b>模具排气槽尺寸（深 × 宽）仍空白</b>：未找到原料厂商或冰箱厂商的公开数值。网上流传的「0.04–0.06 mm」出自 PP 微发泡注塑文章，工艺不同，<b>只作排除警示、已排除、不得套用、不得复活为参数</b>；不得用上方孔间距反推槽尺寸。现场只能按「排气位于料流末端与局部高点、保持通畅」定性核查，数值等厂商资料补齐。</li>
+        <li><b>发泡夹具倾角的具体角度</b>：未找到可靠出处。只有定性机理可入库（注料姿态改变 → 料流末端与气袋位置迁移 → 空洞位置随姿态变化可作鉴别试验），不给角度数。</li>
+        <li><b>模温均匀性 ±℃（PU 冰箱专用要求）</b>：未找到可靠出处；流传的「±5 ℃」同样出自 PP 微发泡注塑，已排除。Demo 只提示逐区测温与缺陷位置叠加比对，不设温差阈值。</li>
+        <li><b>GB/T 26689—2024 表 5.2 的具体限值数字</b>：公开渠道未取得标准原文该表；本页出现的密度 / 导热 / 压缩强度量级均为厂商体系典型值，<b>不冒充标准限值</b>，正式判定请查标准原文。</li>
+        <li><b>GB 12021.2—2025 的具体限值</b>：仅有行业媒体转述，未核官方公告原文，不作标准值引用。</li>
+        <li><b>五大原料商面向冰箱空洞的公开《故障排查指南》全文</b>：未检索到；本页的厂商依据来自其 TDS、产品资料与专利实施例，已逐条标注性质。</li>
+      </ul>
+      <p class="srcnote">原则（行业知识收集报告）：查不到可靠出处的数字一律不入库、不臆填；遇到这些项目，正确动作是输出「证据不足、需人工核查」，而不是给一个编出来的阈值。</p>
+    </details>
+  </section>
+
+  <!-- ===================== 证据来源标注 ===================== -->
+  <section class="card" id="srcTagCard">
+    <div class="sec-head"><span class="step-badge">标注</span><h2>证据来源标注</h2><span class="sub">举证时每条证据先标来源再谈结论，人工决策时先看标签、再看内容。共五类：</span></div>
+    <div class="srcdefs">
+      <div class="srcdef"><span class="srctag tag-ind">【行业】</span><b>公开行业知识</b>：行业报告、厂商 TDS、公开论文与专利。可作通用参考，但其中的数值多为体系典型值或实施例，不得直接当本厂判废线。</div>
+      <div class="srcdef"><span class="srctag tag-hx">【海信】</span><b>现场看板内容</b>：来自《Hisense 发泡常见缺陷及解决方案》现场看板，属本厂现场经验与工艺口径。<b>不得默认推广为通用阈值</b>，换线、换厂、换体系时须重新确认。</div>
+      <div class="srcdef"><span class="srctag tag-gb">【国标】</span><b>GB/T 26689—2024 及方法标准</b>：只用于性能、分类、术语、方法口径，不直接给出某个缺陷的现场成因结论。</div>
+      <div class="srcdef"><span class="srctag tag-meas">【本厂实测】</span><b>本厂历史案例、回测与实测数据</b>：来自本厂实际发生并复核过的案例，是本厂判定的最高优先级依据。</div>
+      <div class="srcdef"><span class="srctag tag-pend">【待验证】</span><b>尚未经本厂案例验证的候选核查项</b>：只能进核查清单作提示，<b>不能直接写成规则</b>，也不能作为打分证据。</div>
+    </div>
+    <div class="sup-warn" style="margin-top:12px"><b>来源冲突时的处理：</b>本厂案例先按<span class="srctag tag-hx">【海信】</span>工艺处置，并把冲突记录下来；术语、分类、方法口径以<span class="srctag tag-gb">【国标】</span>为准。</div>
+  </section>
+
+  <!-- ===================== 海信现场发泡缺陷知识（现场看板） ===================== -->
+  <section class="card" id="hisenseCard">
+    <div class="sec-head"><span class="step-badge">看板</span><h2>海信现场发泡缺陷知识（现场看板）</h2><span class="sub">逐条转录自现场看板《Hisense 发泡常见缺陷及解决方案》，每条成因与解决方案前均标<span class="srctag tag-hx">【海信】</span>。</span></div>
+    <p class="sup-intro"><b>本栏定位：</b>只作展示与核查指引，<b>不新增影响打分的证据项或权重</b>，不改变原有 20 条种子规则、打分公式、预设案例与排名。看板没有给出的数字本栏不补：「按工艺要求」处只写按工艺要求，不填数值。</p>
+
+    <div class="sup-group">
+      <h3>1. 空洞（缺料）</h3>
+      <p class="hx-pos"><b>常见位置：</b>箱体顶部和底部、内胆筋部、门体门衬筋部、门体四角部。</p>
+      <table class="boardtable">
+        <thead><tr><th>成因</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td><span class="srctag tag-hx">【海信】</span>预热温度低</td><td><span class="srctag tag-hx">【海信】</span>按工艺要求预热</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>模具温度低</td><td><span class="srctag tag-hx">【海信】</span>控制模具温度</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>局部排气不良</td><td><span class="srctag tag-hx">【海信】</span>在排气不良处加排气孔</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>黑白比例过高</td><td><span class="srctag tag-hx">【海信】</span>调整黑白比例</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>原料温度过高</td><td><span class="srctag tag-hx">【海信】</span>调整料温</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>反应速度过快</td><td><span class="srctag tag-hx">【海信】</span>调整料温、选用速度适合的组合聚醚</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>枪头自由密度过高</td><td><span class="srctag tag-hx">【海信】</span>排查组合聚醚与发泡剂混合比例及枪头黑白料比例，将自由密度调至工艺要求范围</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>流动通道被阻挡</td><td><span class="srctag tag-hx">【海信】</span>预装时避免通道被阻挡</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>注料位置偏</td><td><span class="srctag tag-hx">【海信】</span>调整箱体枪头流量确保落在后背板合适位置、调整门体注料移动位置确保落在壳合适位置</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sup-group">
+      <h3>2. 压力泡沫收缩</h3>
+      <p class="hx-pos"><b>表现：</b>室温或低温放置一段时间后收缩变形。</p>
+      <table class="boardtable">
+        <thead><tr><th>成因</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td><span class="srctag tag-hx">【海信】</span>组合聚醚质量不达标</td><td><span class="srctag tag-hx">【海信】</span>选用达标组合聚醚</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>注入量少、密度低于工艺要求</td><td><span class="srctag tag-hx">【海信】</span>按型号设定注入量并检修保养设备</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>黑白比例过低</td><td><span class="srctag tag-hx">【海信】</span>控制黑白比例</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>黑白料压力相差大或混合室、喷嘴、针阀有杂质致混合不良</td><td><span class="srctag tag-hx">【海信】</span>控制注料压力、黑白料压力差应小于 10 bar、设备维修人员定期（建议一个月）清理混合室、喷嘴及针阀</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>注入量不变时模具温度低或自由密度过高致过填充不足</td><td><span class="srctag tag-hx">【海信】</span>控制模具温度、排查混合比例并调整自由密度至工艺范围</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sup-group">
+      <h3>3. 泡沫泡孔粗大</h3>
+      <p class="hx-pos"><b>判读：</b>正常泡孔细小、目测不可见；异常时泡孔粗大不均匀、目测可见。</p>
+      <table class="boardtable">
+        <thead><tr><th>成因</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td><span class="srctag tag-hx">【海信】</span>组合聚醚泡沫稳定剂硅油降解</td><td><span class="srctag tag-hx">【海信】</span>选用合格组合聚醚并在保质期内使用</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>原料受油脂等杂物污染</td><td><span class="srctag tag-hx">【海信】</span>在预混、输送、高压混合全过程避免油脂污染</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>压力相差大或混合室、喷嘴、针阀杂质致混合差</td><td><span class="srctag tag-hx">【海信】</span>控制注料压力、黑白料压力差小于 10 bar、定期（建议一个月）清理混合室、喷嘴及针阀</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sup-group">
+      <h3>4. 脱粘</h3>
+      <p class="hx-pos"><b>表现：</b>泡沫与内外壳粘开。</p>
+      <table class="boardtable">
+        <thead><tr><th>成因</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td><span class="srctag tag-hx">【海信】</span>预热温度低</td><td><span class="srctag tag-hx">【海信】</span>预热</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>模具温度低</td><td><span class="srctag tag-hx">【海信】</span>控制模具温度</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>黑白比例过高</td><td><span class="srctag tag-hx">【海信】</span>控制黑白比例</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>内外壳表面脏物或油脂</td><td><span class="srctag tag-hx">【海信】</span>确保表面干净无脏物或油脂</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>表面太光滑、表面张力小</td><td><span class="srctag tag-hx">【海信】</span>内壳表面做电晕处理、外壳做相关处理、避免太光滑、增加表面张力</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>模具温度过高、发泡剂过早气化致界面存气</td><td><span class="srctag tag-hx">【海信】</span>控制模具温度</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>组合聚醚质量不达标、粘接性差</td><td><span class="srctag tag-hx">【海信】</span>选用达标组合聚醚</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>结构设计不合理或拼装连接处密封不严</td><td><span class="srctag tag-hx">【海信】</span>反馈设计人员更改不合理设计、发泡前拼装连接处密封严密</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>组合聚醚粘度过低、初始粘度过低</td><td><span class="srctag tag-hx">【海信】</span>选用粘度适合的组合聚醚</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>原料温度及模具温度过高</td><td><span class="srctag tag-hx">【海信】</span>调整料温、控制模具温度</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>原料温度及模具温度过低</td><td><span class="srctag tag-hx">【海信】</span>调整料温、控制模具温度</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sup-group">
+      <h3>5. 漏料（溢料）</h3>
+      <p class="hx-pos"><b>表现：</b>部件连接处漏出泡沫。</p>
+      <table class="boardtable">
+        <thead><tr><th>成因</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td><span class="srctag tag-hx">【海信】</span>黑白比例过低</td><td><span class="srctag tag-hx">【海信】</span>控制黑白比例</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>预热温度过高</td><td><span class="srctag tag-hx">【海信】</span>按工艺要求预热</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>注入量过多致外溢</td><td><span class="srctag tag-hx">【海信】</span>按型号设定注入量并检修保养设备</td></tr>
+          <tr><td><span class="srctag tag-hx">【海信】</span>注入量不变时模具温度过高或自由密度过低致过填充过大</td><td><span class="srctag tag-hx">【海信】</span>控制模具温度、排查混合比例并调整自由密度至工艺范围</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sup-group">
+      <h3>对照说明：用看板前先看这四条</h3>
+      <ul class="pendlist">
+        <li><b>参数必须写清方向：</b>黑白比例、模温、料温引用时要注明偏高还是偏低，两端对应的缺陷不同。其中<b>模温对脱粘是 U 形关系</b>（过高、过低都会脱粘）；<b>预热对空洞与漏料是反向关系</b>（预热低 → 空洞，预热高 → 漏料），不能只写「温度异常」。</li>
+        <li><b>两个数字只属本厂口径：</b>黑白料压力差小于 10 bar、枪头（混合室、喷嘴、针阀）清理建议一个月，均只标<span class="srctag tag-hx">【海信】</span>，<b>不是通用阈值</b>，不得推广到其他产线或体系。</li>
+        <li><b>看板「漏料」单独出现时</b>，先查注入量、模温、自由密度与接缝密封，<b>不要自动判为内部空洞</b>。</li>
+        <li><b>看板「空洞」要按成因拆表型：</b>不同成因对应不同空洞表型，判读时按成因逐条拆分，<b>不要把整条「空洞」硬套到一个表型上</b>。</li>
+      </ul>
+      <p class="sup-find" style="margin-top:10px">以下 8 项来自看板、但现有规则尚未覆盖，统一标<span class="srctag tag-pend">【待验证】</span>，<b>只作核查提示，不写成规则、不参与打分</b>：</p>
+      <ul class="pendlist">
+        <li><span class="srctag tag-pend">【待验证】</span><b>自由密度</b>：枪头自由密度过高 / 过低与空洞、收缩、漏料的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>注料位置</b>：注料落点偏移（箱体后背板 / 门体壳位置）与局部缺料的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>流动通道阻挡</b>：预装时通道被阻挡与下游缺料的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>壳体表面处理</b>：表面过光滑 / 表面张力小、电晕等处理与脱粘的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>拼装密封与结构设计</b>：拼装连接处密封不严、结构设计不合理与脱粘 / 漏料的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>聚醚粘度</b>：组合聚醚粘度（初始粘度）过低与脱粘的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>油脂污染全链条</b>：预混、输送、高压混合全过程油脂污染与泡孔粗大、脱粘的对应关系。</li>
+        <li><span class="srctag tag-pend">【待验证】</span><b>预热过高</b>：预热温度过高与漏料的对应关系（与空洞的「预热低」方向相反）。</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+<script>
+/* ============================================================
+   数据层：直接取自《冰箱箱体发泡_本体缺陷根因推理模型 v1.0》
+   与导入包 04_rules.csv（20 条种子规则）、01_classes.csv（表型）。
+   每条证据都带一句大白话理由（why），打分时原样讲给业务人员听。
+   ============================================================ */
+var PHENOS = {
+  "V-GAS":   {name:"空洞 · 困气型",     short:"困气型空洞",   desc:"孤立大空洞，多在最高点/转角，内壁光滑"},
+  "V-FILL":  {name:"空洞 · 充填不足型", short:"充填不足空洞", desc:"大面积空缺，多在远注料口端，常伴密度偏低"},
+  "V-DISP":  {name:"空洞 · 弥散型",     short:"弥散型空洞",   desc:"中小空洞弥散分布，遍布泡层中部"},
+  "V-MIX":   {name:"空洞 · 混合不良型", short:"混合不良空洞", desc:"条纹状/云雾状空洞，伴未混料痕"},
+  "V-CELL":  {name:"空洞 · 泡孔型",     short:"泡孔型空洞",   desc:"泡孔粗大、并泡成大孔，泡壁薄"},
+  "V-SHRINK":{name:"空洞 · 收缩型",     short:"收缩型空洞",   desc:"不规则撕裂状空洞，常在厚料区，伴收缩"},
+  "V-INTF":  {name:"空洞 · 界面型",     short:"界面型空鼓",   desc:"沿内胆界面的扁平空鼓"},
+  "S":       {name:"收缩凹陷",          short:"收缩凹陷",     desc:"外壳表面凹陷、箱体尺寸收缩"},
+  "C":       {name:"开裂 / 顶泡",       short:"开裂顶泡",     desc:"泡层裂纹、外壳顶泡或鼓包"},
+  "D":       {name:"脱粘分层",          short:"脱粘分层",     desc:"敲击空音，剖切见界面分离"},
+  "M":       {name:"密度 / 强度异常",   short:"密度异常",     desc:"整机或局部偏软，强度/导热不达标"},
+  "L":       {name:"溢料伴内部缺料",    short:"溢料缺料",     desc:"合模缝大量溢料且内部伴空缺"}
+};
+/* 邻近表型：本表型没有规则直配、或需要扩大嫌疑范围时，从这些表型借候选（起步分打六折） */
+var NEIGHBORS = {
+  "V-GAS":["V-FILL","V-DISP"], "V-FILL":["V-GAS","L","M"], "V-DISP":["V-MIX","V-GAS"],
+  "V-MIX":["V-DISP","V-CELL"], "V-CELL":["V-MIX","V-DISP"], "V-SHRINK":["V-GAS","S"],
+  "V-INTF":["D","V-GAS"], "S":["V-FILL","V-SHRINK"], "C":["S","M"], "D":["V-INTF"],
+  "M":["V-DISP","S"], "L":["V-FILL"]
+};
+
+var FACT_GROUPS = ["位置与形态","对比证据（最值钱）","设备与保养记录","参数实测"];
+var FACTS = [
+  {id:"f_highest", g:0, label:"空洞位于模腔最高点区域"},
+  {id:"f_ventnear",g:0, label:"空洞紧邻排气孔位置"},
+  {id:"f_notvent", g:0, label:"空洞不在排气孔上方区域"},
+  {id:"f_farend",  g:0, label:"空缺位于远注料口端"},
+  {id:"f_disp",    g:0, label:"空洞弥散分布于泡层中部"},
+  {id:"f_interface",g:0,label:"空洞沿内胆界面分布"},
+  {id:"f_smooth",  g:0, label:"空洞内壁光滑"},
+  {id:"f_tear",    g:0, label:"空洞内壁撕裂状"},
+  {id:"f_stripe",  g:0, label:"剖切见条纹 / 云雾状未混料痕"},
+  {id:"f_coarse",  g:0, label:"泡孔整体粗大、并泡"},
+  {id:"f_samecav", g:1, label:"同模腔连续多台同位置出现"},
+  {id:"f_othercav",g:1, label:"其他模腔同位置同发"},
+  {id:"f_sameline",g:1, label:"同批料其他线也同发"},
+  {id:"f_ventoverdue",g:2,label:"排气孔保养逾期"},
+  {id:"f_ventok",  g:2, label:"排气孔刚保养且抽检通畅"},
+  {id:"f_headold", g:2, label:"枪头使用超周期"},
+  {id:"f_headnew", g:2, label:"枪头刚更换"},
+  {id:"f_moldchange",g:2,label:"近期换模 / 夹具维修"},
+  {id:"f_batchtime",g:2, label:"换料时点与缺陷起始吻合"},
+  {id:"f_overflow",g:2, label:"合模缝明显溢料"},
+  {id:"f_sealbad", g:2, label:"预装密封抽检异常"},
+  {id:"f_shorttime",g:3,label:"注料时间短于标准下限"},
+  {id:"f_longtime",g:3, label:"注料时间被拉长"},
+  {id:"f_injok",   g:3, label:"注料时间在标准内"},
+  {id:"f_weightlow",g:3,label:"整机称重偏低"},
+  {id:"f_weighthigh",g:3,label:"整机称重偏高"},
+  {id:"f_weightok",g:3, label:"整机称重合格"},
+  {id:"f_meterdrift",g:3,label:"注料量记录下限漂移 / 近期动过计量泵"},
+  {id:"f_moldlow", g:3, label:"模温偏低或分区温差大"},
+  {id:"f_moldok",  g:3, label:"模温在标内且均匀"},
+  {id:"f_ambientlow",g:3,label:"环境温度同步偏低"},
+  {id:"f_mattemp", g:3, label:"料温偏离标准带"},
+  {id:"f_ratio",   g:3, label:"配比（指数）偏离"},
+  {id:"f_ratiook", g:3, label:"配比在标准带内"},
+  {id:"f_presslow",g:3, label:"混合压力低于下限 / 波动大"},
+  {id:"f_pressok", g:3, label:"混合压力稳定达标"},
+  {id:"f_curecut", g:3, label:"固化时间被压缩（提速时段）"},
+  {id:"f_cureok",  g:3, label:"固化时间达标"},
+  {id:"f_preheat", g:3, label:"内胆预热温度偏低"},
+  {id:"f_cupshort",g:3, label:"杯泡拉丝时间缩短"}
+];
+var FACT_LABEL = {}; FACTS.forEach(function(f){ FACT_LABEL[f.id]=f.label; });
+var factState = {}; FACTS.forEach(function(f){ factState[f.id]="none"; });
+var factAuto = {};  /* 由表型/解析带入的事实，做个标记 */
+
+/* 规则：sup 支持证据（命中 +w 分），exc 排除证据（命中 −25 分，strong=一票否决归零）。
+   每项 t 表示触发状态：hit=该证据被观察到；miss=已确认没有。 */
+var RULES = [
+ {id:"R-V01", ph:["V-GAS"], cat:"模", cause:"排气孔堵塞", hyp:"排气孔堵塞，气体无法排出", prior:0.35,
+  sup:[
+   {f:"f_highest",t:"hit",w:15,why:"因为空洞正好在模具最高点——气体往高处跑，最高点正是困气最爱积的地方，这是排气不畅的典型特征"},
+   {f:"f_samecav",t:"hit",w:20,why:"因为同一个模腔连着好几台都在同一位置出空洞——问题出在这套模自己身上，不是偶然，也不是料的问题"},
+   {f:"f_ventoverdue",t:"hit",w:15,why:"因为排气孔保养已经逾期——孔道容易被发泡料和脱模剂结垢慢慢堵死"},
+   {f:"f_smooth",t:"hit",w:10,why:"因为空洞内壁光滑——这是空气被困住后形成的长相，不像撕裂伤，也不像反应出问题"}],
+  exc:[
+   {f:"f_notvent",t:"hit",strong:true,why:"因为空洞根本不在排气孔上方——排气孔堵不堵，都影响不到这个位置"},
+   {f:"f_ventok",t:"hit",strong:false,why:"因为排气孔刚保养完、抽检是通畅的——堵的可能性基本被排除"},
+   {f:"f_othercav",t:"hit",strong:false,why:"因为其他模腔同一位置也出问题——大家共用的是料和工艺，矛头应该指向共性原因，而不是某一个腔的排气孔"}],
+  checks:[{a:"通针 / 拆检该模腔排气孔",cost:"低",gain:"高"},{a:"查排气孔保养记录与逾期天数",cost:"低",gain:"中"}],
+  fix:"清理排气孔；缩短保养周期或加装逾期报警",
+  ex:{what:"排气孔是模具上让空气排出去的小孔，按模腔+位置单独管理，是困气空洞的头号关联对象。",why:"发泡料充满模腔时，腔里的空气必须从排气孔挤出去。孔被发泡料、脱模剂结垢堵住后，空气出不去，就被料液包在里面，形成一个光滑的大空洞。",signs:"空洞在模具最高点、内壁光滑、同一个模腔反复在同一位置出现。"}},
+ {id:"R-V02", ph:["V-GAS"], cat:"法", cause:"注料过快封住排气", hyp:"注料过快，流动前锋提前封住排气通道", prior:0.20,
+  sup:[
+   {f:"f_shorttime",t:"hit",w:20,why:"因为注料时间比标准还短——料冲得太快，流动前锋一下子把排气通道封死了，空气还没来得及跑出去"},
+   {f:"f_ventnear",t:"hit",w:10,why:"因为空洞就在排气孔附近——空气是往出口跑的，卡在出口附近说明是「没跑掉」而不是「没地方跑」"},
+   {f:"f_ventok",t:"hit",w:10,why:"因为排气孔本身是通畅的——孔没堵，那就是空气到得太晚，被料封在了里面"}],
+  exc:[
+   {f:"f_injok",t:"hit",strong:false,why:"因为注料时间在标准范围内——速度没超，封排气这条基本不成立"}],
+  checks:[{a:"调取注料曲线核对注料时间",cost:"低",gain:"高"},{a:"降速试产 3 台看空洞是否消失",cost:"中",gain:"高"}],
+  fix:"修正注料程序/速度；复核排气位置与注料口的相对关系",
+  ex:{what:"注料速度过快时，料液前锋会抢先到达排气口并把它封住。",why:"排气孔没堵、位置也对，但空气还没排完通道就被封死了，剩下的空气只能留在料里形成空洞。多发生在提速或换注料程序之后。",signs:"注料时间短于标准下限；空洞在排气孔附近但孔是通的；降速试产后空洞消失。"}},
+ {id:"R-V03", ph:["V-GAS"], cat:"模", cause:"夹具倾角/定位异常", hyp:"夹具倾角/定位异常，形成新的困气点", prior:0.10,
+  sup:[
+   {f:"f_moldchange",t:"hit",w:20,why:"因为刚换过模或修过夹具就开始出问题——时间点太巧了，困气的位置很可能被挪动了"},
+   {f:"f_notvent",t:"hit",w:10,why:"因为这次空洞的位置和以前常出的困气点对不上——像是困气点被挪到了新位置"}],
+  exc:[
+   {f:"f_moldchange",t:"miss",strong:false,why:"因为夹具近期根本没动过——倾角和定位没有理由突然变，这条嫌疑大幅下降"}],
+  checks:[{a:"复测夹具倾角与合模定位",cost:"中",gain:"高"},{a:"对比换模前后的案例时间线",cost:"低",gain:"中"}],
+  fix:"校正夹具倾角/定位；更新困气点图谱",
+  ex:{what:"夹具倾角或定位偏了，模腔里「最高点」的位置就变了，空气会积在新的高点。",why:"困气永远发生在当时的最高点。夹具一动，老的排气位置不再对着新高点，空气就被困在没有排气孔的地方。",signs:"换模/维修夹具后开始出现；空洞位置比历史困气点偏移；定位检测异常。"}},
+ {id:"R-V04", ph:["V-FILL"], cat:"机", cause:"注料量不足（计量漂移）", hyp:"注料量实际不足（计量泵计量漂移）", prior:0.30,
+  sup:[
+   {f:"f_weightlow",t:"hit",w:20,why:"因为整机称重偏低——料确实打少了，这是注料不足最直接的证据"},
+   {f:"f_farend",t:"hit",w:15,why:"因为空缺在离注料口最远的一端——料不够的时候，总是先喂不到最远的地方"},
+   {f:"f_meterdrift",t:"hit",w:10,why:"因为注料量记录往下限漂、最近还动过计量泵——计量可能已经不准了，设定值对、实际出料少"}],
+  exc:[
+   {f:"f_weightok",t:"hit",strong:true,why:"因为整机称重合格——料的总量是够的，注料不足这条直接排除"},
+   {f:"f_meterdrift",t:"miss",strong:false,why:"因为注料量记录稳定在中上限——没有漂移的迹象"}],
+  checks:[{a:"复称整机 / 发泡层重量",cost:"低",gain:"高"},{a:"实测校准计量泵出料量",cost:"中",gain:"高"}],
+  fix:"校准/维修计量泵；注料量纳入 SPC 监控",
+  ex:{what:"计量泵用久了会漂移：系统以为打了 100 克，实际只打出 92 克。",why:"料的总量不够，流不到最远端就停了，远注料口端出现大面积空缺，整机称重也跟着偏低。",signs:"整机称重偏低；空缺在远注料口端；同班次多台注料量记录贴着下限。"}},
+ {id:"R-V05", ph:["V-FILL"], cat:"机", cause:"注料流量衰减", hyp:"注料流量衰减（过滤器堵塞/管路阻力）", prior:0.15,
+  sup:[
+   {f:"f_longtime",t:"hit",w:15,why:"因为注料时间被明显拉长——同样多的料打得更慢，说明管路里的阻力变大了"},
+   {f:"f_presslow",t:"hit",w:10,why:"因为压力曲线后段往下掉——像滤芯堵了、料越打越费劲的样子"}],
+  exc:[
+   {f:"f_longtime",t:"miss",strong:false,why:"因为注料时间没有变长——流量没有衰减的迹象"},
+   {f:"f_pressok",t:"hit",strong:false,why:"因为压力曲线平稳达标——管路阻力正常"}],
+  checks:[{a:"看注料段压力/流量曲线形态",cost:"低",gain:"高"},{a:"拆检管路滤芯",cost:"中",gain:"中"}],
+  fix:"更换滤芯；建立压差/曲线形态预警",
+  ex:{what:"管路过滤器慢慢堵住，料的流量衰减，注不满或注得过慢。",why:"过滤器堵塞后阻力上升，定量模式下注料时间被拉长，料还没流到位前锋就开始凝胶，远端出现空缺。",signs:"注料时间变长；压力曲线后段下掉；滤芯更换周期已到。"}},
+ {id:"R-V06", ph:["V-FILL","L"], cat:"法", cause:"密封失效漏料", hyp:"密封失效漏料，导致内部缺料", prior:0.15,
+  sup:[
+   {f:"f_overflow",t:"hit",w:20,why:"因为合模缝明显往外溢料——料从缝里跑出去了，里面自然就缺料了"},
+   {f:"f_sealbad",t:"hit",w:10,why:"因为预装密封抽检异常——密封没做好的地方正是漏料的位置"},
+   {f:"f_weightok",t:"hit",w:10,why:"因为称重并不低、但分布异常——料没少，是跑到不该去的地方了，这正是漏料型缺料和注料不足的区别"}],
+  exc:[
+   {f:"f_overflow",t:"miss",strong:false,why:"因为合模缝没有溢料——没有漏料的出口，这条基本排除"},
+   {f:"f_sealbad",t:"miss",strong:false,why:"因为密封抽检合格——密封这一环没有发现问题"}],
+  checks:[{a:"检查密封件贴附与箱体缝隙",cost:"低",gain:"高"},{a:"回看预装工序抽检记录",cost:"低",gain:"中"}],
+  fix:"规范密封操作与材料；预装抽检加严",
+  ex:{what:"预装时密封没贴好，发泡料从合模缝漏出去。",why:"注料量本身没错，但一部分料在发泡过程中漏到模腔外，腔内实际充填不足，形成和漏口位置对应的空缺。",signs:"合模缝明显溢料；空缺位置与泄漏位置对应；称重不低但分布异常。"}},
+ {id:"R-V07", ph:["V-DISP"], cat:"模/环", cause:"模温过低前锋凝胶", hyp:"模温过低，黏度上升、前锋提前凝胶裹气", prior:0.25,
+  sup:[
+   {f:"f_moldlow",t:"hit",w:20,why:"因为模温低于下限或分区温差大——料一碰到冷模黏度就上升，流动性变差，流不动了"},
+   {f:"f_disp",t:"hit",w:15,why:"因为空洞弥散分布、多在远端厚料区——像料流到一半变稠、提前凝胶，把气体裹在了里面"},
+   {f:"f_ambientlow",t:"hit",w:10,why:"因为环境温度也同步偏低——冬季、首班最常见，模温更难达标"},
+   {f:"f_cupshort",t:"hit",w:10,why:"因为杯泡拉丝时间缩短——反应节奏确实变了，和「提前凝胶」的判断对得上"}],
+  exc:[
+   {f:"f_moldok",t:"hit",strong:true,why:"因为模温在标准内而且均匀——模温这条直接排除"},
+   {f:"f_cupshort",t:"miss",strong:false,why:"因为杯泡反应时间正常——反应速度没有异常"}],
+  checks:[{a:"调模温分区记录核对",cost:"低",gain:"高"},{a:"当班杯泡试验测乳化/拉丝时间",cost:"低",gain:"高"}],
+  fix:"修复模温分区；首班预热规程加严",
+  ex:{what:"模具温度太低，料液一接触模壁就变稠。",why:"黏度上升后流动性变差，流动前锋提前凝胶，来不及把空气推出去，气体被裹进泡层中部，形成弥散分布的中小空洞。",signs:"模温低于下限或分区温差大；空洞弥散且多在远端厚料区；冬季、首班高发。"}},
+ {id:"R-V08", ph:["V-DISP"], cat:"机", cause:"料温异常", hyp:"料温异常（过低黏度高 / 过高反应快）", prior:0.15,
+  sup:[
+   {f:"f_mattemp",t:"hit",w:20,why:"因为料温偏离了标准带——太低料变稠流不动，太高反应太快，两种情况都容易出弥散空洞"}],
+  exc:[
+   {f:"f_mattemp",t:"miss",strong:true,why:"因为料温全程都在标准带内——这条直接排除"}],
+  checks:[{a:"查料温曲线与温控记录",cost:"低",gain:"高"},{a:"抽测料液黏度",cost:"中",gain:"中"}],
+  fix:"修复料罐温控；料温出带拦截报警",
+  ex:{what:"料罐温控失效，组合聚醚或 MDI 的温度偏离标准带（示例 20±2℃，待本厂标定）。",why:"料温低则黏度高、流动差；料温高则反应过快、前锋提前凝胶。都会破坏正常的流动充填过程。",signs:"料温曲线偏离标准带；与温控报警时间吻合；黏度抽检异常。"}},
+ {id:"R-V09", ph:["V-DISP"], cat:"料", cause:"配比偏移", hyp:"配比偏移（指数失准），反应与发泡失配", prior:0.20,
+  sup:[
+   {f:"f_ratio",t:"hit",w:20,why:"因为在线配比已经偏离——两种料的比例不对，反应速度和发泡过程就配不上拍"},
+   {f:"f_sameline",t:"hit",w:15,why:"因为同一批料在其他产线也出问题——各线共用这批料和配比体系，矛头指向料与配比"}],
+  exc:[
+   {f:"f_ratiook",t:"hit",strong:true,why:"因为配比在标准带内——这条直接排除"},
+   {f:"f_sameline",t:"miss",strong:false,why:"因为同批料在其他线一切正常——不是料的共性问题"}],
+  checks:[{a:"核在线配比与双组分流量比",cost:"低",gain:"高"},{a:"杯泡验证 + 测自由发泡密度",cost:"低",gain:"高"}],
+  fix:"校准双计量系统；配比出带停线规则",
+  ex:{what:"组合聚醚和 MDI 的实际流量比偏了，也就是异氰酸酯指数失准。",why:"比例不对，反应速度、发泡倍率和固化节奏全部失配，气体释放和凝胶对不上点，泡层里留下弥散空洞，还常伴硬度、密度异常。",signs:"在线配比记录偏离；同批料其他线同发；泡层硬度/密度异常。"}},
+ {id:"R-V10", ph:["V-DISP"], cat:"料", cause:"物料批次异常", hyp:"物料批次异常（水分/黏度/发泡剂含量）", prior:0.15,
+  sup:[
+   {f:"f_batchtime",t:"hit",w:20,why:"因为换料的时间点和缺陷开始的时间点正好对上——这种吻合很少是巧合"},
+   {f:"f_sameline",t:"hit",w:10,why:"因为同批料在其他线也同发——这批料本身的嫌疑很大"}],
+  exc:[
+   {f:"f_batchtime",t:"miss",strong:false,why:"因为缺陷开始的时间和换料对不上——不是这批料的事"},
+   {f:"f_othercav",t:"miss",strong:false,why:"因为同批料、同班次的其他模腔都正常——如果是料的问题，不会只挑一个模腔出"},
+   {f:"f_sameline",t:"miss",strong:false,why:"因为同批料在其他线正常——批次共性不成立"}],
+  checks:[{a:"调批次 QC 记录与留样复测",cost:"中",gain:"高"},{a:"换回上批留样料试产验证",cost:"中",gain:"高"}],
+  fix:"隔离问题批次；来料检验/存放期管理加严",
+  ex:{what:"这批组合聚醚或 MDI 本身有问题：水分、黏度或发泡剂含量超标，或者存放超期。",why:"料的性质变了，反应和发泡过程跟着变，缺陷会从换料那一刻起批量出现，换回好料就消失。",signs:"换料时点与缺陷起始吻合；来料 QC 临界或超标；同批料多线同发。"}},
+ {id:"R-V11", ph:["V-MIX"], cat:"机", cause:"混合压力不足", hyp:"混合压力不足，撞击混合能量不够", prior:0.30,
+  sup:[
+   {f:"f_presslow",t:"hit",w:20,why:"因为混合压力低于下限或波动大——两种料靠高压撞击才能混匀，能量不够就混不匀"},
+   {f:"f_stripe",t:"hit",w:20,why:"因为剖切看到条纹状未混料痕——两种料根本没混匀，这是混合不良最直接的证据"},
+   {f:"f_coarse",t:"hit",w:10,why:"因为泡孔粗细不均并存——混合不匀时，局部反应程度不一样，泡孔就长得不均匀"}],
+  exc:[
+   {f:"f_pressok",t:"hit",strong:true,why:"因为混合压力稳定达标——撞击能量是够的，这条直接排除"},
+   {f:"f_stripe",t:"miss",strong:false,why:"因为截面混合均匀、没有条纹——混合状态没有发现问题"}],
+  checks:[{a:"查注料段混合压力曲线",cost:"低",gain:"高"},{a:"剖切看截面纹理（破坏性）",cost:"中",gain:"高"}],
+  fix:"恢复混合压力；排查泵/蓄能器/管路",
+  ex:{what:"高压发泡靠两种料在枪头里对撞混合，压力不够，撞击能量就不足。",why:"混合不充分的料液打进模腔，局部没反应完全，形成条纹状、云雾状的空洞和未混料痕，泡孔也粗细不均。",signs:"混合压力低于下限或波动大；剖切见条纹未混料痕；泡孔粗细不均。"}},
+ {id:"R-V12", ph:["V-MIX"], cat:"机", cause:"枪头磨损/堵塞", hyp:"枪头磨损/堵塞，混合雾化恶化", prior:0.25,
+  sup:[
+   {f:"f_headold",t:"hit",w:20,why:"因为枪头使用已经超周期——混合室和喷嘴磨损、结垢后，雾化和混合状态都会变差"},
+   {f:"f_stripe",t:"hit",w:10,why:"因为缺陷呈局部云雾状——像喷嘴状态不好时打出来的料，分布零散、位置随机"}],
+  exc:[
+   {f:"f_headnew",t:"hit",strong:false,why:"因为枪头刚换过——磨损堵塞的可能性很低"},
+   {f:"f_samecav",t:"hit",strong:false,why:"因为缺陷位置高度固定在同一处——枪头问题的位置应该是随机的，这么固定，更像模具侧的问题"}],
+  checks:[{a:"拆检枪头混合室与喷嘴",cost:"中",gain:"高"},{a:"换枪头对比试产",cost:"中",gain:"高"}],
+  fix:"更换/保养枪头；建立枪头寿命计数",
+  ex:{what:"混合枪头用久了，混合室和喷嘴磨损或局部堵塞。",why:"喷嘴状态一坏，料液的雾化和混合就恶化，打出的料一团一团的，形成位置随机的云雾状缺陷。历史上往往是换了枪头缺陷就消失。",signs:"枪头使用超周期；缺陷局部云雾状、位置随机；换枪头后缺陷消失。"}},
+ {id:"R-V13", ph:["V-CELL"], cat:"料", cause:"稳泡体系失效", hyp:"稳泡体系失效（硅油量/批次、并泡）", prior:0.20,
+  sup:[
+   {f:"f_coarse",t:"hit",w:20,why:"因为泡孔整体粗大、互相并泡——气泡稳不住、合并长大，正是稳泡剂失效的长相"},
+   {f:"f_sameline",t:"hit",w:10,why:"因为同批料共性出现——指向料里的稳泡体系，而不是某一台设备"}],
+  exc:[
+   {f:"f_coarse",t:"miss",strong:true,why:"因为泡孔细密、只有局部大孔——不是整体稳泡失效，这条直接排除"}],
+  checks:[{a:"杯泡观察泡孔结构",cost:"低",gain:"高"},{a:"核稳泡剂相关批次记录",cost:"低",gain:"中"}],
+  fix:"核查组合料配方/批次；与供应商协同",
+  ex:{what:"组合聚醚里的硅油稳泡剂量不对、或批次有问题。",why:"稳泡剂的作用是让发泡时的小气泡彼此独立、不合并。它失效后气泡互相并泡长大，形成泡壁很薄的大孔。",signs:"泡孔整体粗大；同批料共性；常伴料温偏高。"}},
+ {id:"R-V14", ph:["V-SHRINK"], cat:"法", cause:"固化不足脱模", hyp:"固化不足脱模，后收缩形成撕裂状空洞", prior:0.30,
+  sup:[
+   {f:"f_curecut",t:"hit",w:20,why:"因为固化时间被压缩了——赶节拍提速时最常见，泡沫还没长结实就脱模"},
+   {f:"f_tear",t:"hit",w:20,why:"因为空洞呈撕裂状、又在厚料区——这是泡沫强度不够，脱模后被内部压力撕开的典型长相"}],
+  exc:[
+   {f:"f_cureok",t:"hit",strong:true,why:"因为固化时间是达标的——这条直接排除"},
+   {f:"f_smooth",t:"hit",strong:false,why:"因为空洞内壁光滑、是困气的长相——形态对不上，不是收缩撕裂"}],
+  checks:[{a:"核固化时间与节拍记录",cost:"低",gain:"高"},{a:"延长固化试产对比",cost:"中",gain:"高"}],
+  fix:"恢复固化时间；节拍变更必须走工艺评审",
+  ex:{what:"为了赶产量压缩了固化时间，泡沫还没固化到位就脱模。",why:"脱模时泡沫强度不足，之后继续收缩，厚料区内部被撕开，形成不规则的撕裂状空洞，还常伴尺寸收缩。",signs:"固化时间被压缩（提速时段）；空洞撕裂状、在厚料区；脱模强度抽检低。"}},
+ {id:"R-V15", ph:["V-INTF"], cat:"法/料", cause:"内胆预热不足/界面问题", hyp:"内胆预热不足/表面污染/变形，界面困气与空鼓", prior:0.25,
+  sup:[
+   {f:"f_interface",t:"hit",w:20,why:"因为空鼓沿着内胆界面走、多在转角——问题就出在界面这一层，不在泡层中间"},
+   {f:"f_preheat",t:"hit",w:15,why:"因为预热温度记录偏低——内胆太凉，料贴不牢，界面处容易困气、起鼓"}],
+  exc:[
+   {f:"f_interface",t:"miss",strong:true,why:"因为空洞在泡层中部、界面贴合良好——不是界面问题，这条直接排除"}],
+  checks:[{a:"查内胆预热记录",cost:"低",gain:"高"},{a:"剖切看界面结合情况",cost:"中",gain:"中"},{a:"核内胆来料批次",cost:"低",gain:"中"}],
+  fix:"规范预热与内胆存放/清洁；内胆来料检验加严",
+  ex:{what:"内胆预热不足、表面有污染或变形，泡沫和内胆贴合不上。",why:"界面处温度低、表面状态差时，料液在界面上铺展和粘结都不好，气体和空鼓沿界面形成扁平的空鼓，转角处最明显。",signs:"空鼓沿界面且在内胆转角；预热温度偏低；敲击空音成片。"}},
+ {id:"R-S01", ph:["S"], cat:"料/机", cause:"发泡压力不足", hyp:"发泡压力不足（注料量偏低/指数偏低）导致收缩凹陷", prior:0.25,
+  sup:[
+   {f:"f_weightlow",t:"hit",w:15,why:"因为称重偏低——料少了，发泡时撑起的压力不够，表面就凹了下去"}],
+  exc:[
+   {f:"f_weightok",t:"hit",strong:false,why:"因为称重与密度都正常——发泡压力不足不成立"}],
+  checks:[{a:"称重 + 密度分布测量",cost:"低",gain:"高"}],
+  fix:"按注料量/配比方向处置（同 R-V04、R-V09）",
+  ex:{what:"注料量偏低或指数偏低，发泡产生的内压不足以把泡沫顶满、贴紧外壳。",why:"压力不足时泡沫在冷却收缩阶段没有足够的力维持形状，外壳表面出现凹陷。常和充填不足型空洞同时出现。",signs:"整机称重偏低；密度分布偏低；与远端空缺共现。"}},
+ {id:"R-S02", ph:["S"], cat:"法", cause:"脱模过早/后熟化不足", hyp:"脱模过早、后熟化不足导致收缩凹陷", prior:0.20,
+  sup:[
+   {f:"f_curecut",t:"hit",w:15,why:"因为时间点和节拍变更对得上——固化被压缩，脱模时泡沫还没定型"}],
+  exc:[
+   {f:"f_cureok",t:"hit",strong:false,why:"因为固化与后熟化时间都达标——这条基本排除"}],
+  checks:[{a:"核节拍与固化记录",cost:"低",gain:"高"},{a:"留置 24 小时后复测凹陷变化",cost:"低",gain:"中"}],
+  fix:"恢复固化/后熟化时长",
+  ex:{what:"脱模太早，或脱模后后熟化时间不足就进入下道工序。",why:"泡沫尺寸还没稳定就被移动、堆压，收缩在薄弱处表现出来，放置 24 小时后凹陷还会加重。",signs:"与节拍变更吻合；放置 24h 后凹陷加重。"}},
+ {id:"R-C01", ph:["C"], cat:"料/法", cause:"过填充/指数过高脆化", hyp:"过填充或指数过高，泡体脆化导致开裂/顶泡", prior:0.20,
+  sup:[
+   {f:"f_weighthigh",t:"hit",w:15,why:"因为称重偏高——料打多了、过填充，内压过高容易把泡体顶裂"},
+   {f:"f_ratio",t:"hit",w:15,why:"因为配比记录偏高——指数过高时泡体发脆、掉渣，扛不住应力就开裂"}],
+  exc:[
+   {f:"f_weightok",t:"hit",strong:false,why:"因为称重正常——过填充不成立"},
+   {f:"f_ratiook",t:"hit",strong:false,why:"因为配比正常——指数过高脆化不成立"}],
+  checks:[{a:"整机称重",cost:"低",gain:"高"},{a:"核配比记录",cost:"低",gain:"高"},{a:"手感/剖切看泡体脆性",cost:"低",gain:"中"}],
+  fix:"修正注料量/配比至标准带",
+  ex:{what:"注料量过高（过填充）或异氰酸酯指数过高。",why:"过填充使模内压力过大；指数过高使泡体交联过度、发脆。两者都会让泡层开裂，或把外壳顶出鼓包。",signs:"称重偏高；泡体脆、掉渣；配比记录偏高。"}},
+ {id:"R-D01", ph:["D"], cat:"法/料", cause:"内胆表面/预热导致脱粘", hyp:"内胆表面能低/污染或预热不足，导致脱粘", prior:0.25,
+  sup:[
+   {f:"f_interface",t:"hit",w:15,why:"因为剖切见界面干净分离——是粘接压根没形成，而不是泡体被撕开，问题在界面这一侧"},
+   {f:"f_preheat",t:"hit",w:15,why:"因为预热记录偏低——内胆太凉，泡沫粘不上去"}],
+  exc:[
+   {f:"f_tear",t:"hit",strong:false,why:"因为剖切是泡体被撕离的形态——说明粘接其实形成了，问题在泡体强度，不在粘接"}],
+  checks:[{a:"剖切看分离形态（界面分离还是泡体撕离）",cost:"中",gain:"高"},{a:"查内胆预热记录",cost:"低",gain:"高"}],
+  fix:"执行内胆清洁/预热规程；评估等离子等表面处理",
+  ex:{what:"内胆表面能太低、有污染，或预热不足，泡沫和内胆之间没有形成粘接。",why:"剖切时界面干干净净地分开（区别于泡体被撕开的撕离形态），敲击是大面积空音。",signs:"界面干净分离；预热记录偏低；敲击空音成片。"}},
+ {id:"R-M01", ph:["M"], cat:"料", cause:"配比/批次导致密度异常", hyp:"配比偏移或料批次异常，导致密度/强度不达标", prior:0.25,
+  sup:[
+   {f:"f_ratio",t:"hit",w:15,why:"因为配比偏离会直接改变发泡倍率——密度不对，多半先查配比和料"},
+   {f:"f_sameline",t:"hit",w:10,why:"因为同批料共性出现——指向料批次本身"}],
+  exc:[
+   {f:"f_sameline",t:"miss",strong:false,why:"因为只是单机个例、同批料其他线正常——不像料的共性问题"},
+   {f:"f_ratiook",t:"hit",strong:false,why:"因为配比在标准带内——配比方向基本排除"}],
+  checks:[{a:"实验室自由发泡密度复测",cost:"中",gain:"高"},{a:"同批料共性范围核查",cost:"低",gain:"高"}],
+  fix:"按配比/批次方向处置（同 R-V09、R-V10）",
+  ex:{what:"配比偏移或物料批次异常，改变了发泡倍率和交联程度。",why:"密度和强度是配比与料性的直接结果：指数、发泡剂含量、水分任一项偏了，整机就会偏软或强度不达标。",signs:"自由发泡密度异常；同批料共性；注料量本身正常。"}}
+];
+var RULE_BY_ID = {}; RULES.forEach(function(r){ RULE_BY_ID[r.id]=r; });
+
+/* ============================================================
+   行业知识层：取自《行业知识收集报告 2026-10-23》（report.md）
+   每个数字都绑来源体系与数据性质；报告标「未找到可靠出处」的
+   项目一律不给数值（见页末知识空白区）。
+   ============================================================ */
+/* 体系参数卡：阈值必须绑体系，换体系即换卡 */
+var SYSTEMS = {
+ "SPC": {name:"SPC-10081 冰箱组合聚醚体系（高压机）", nature:"典型值 · 厂商产品资料", src:"SPC-10081 厂商产品页（报告 §1）",
+  cells:[["乳白时间","8–12","s"],["凝胶/拉丝","45–60","s"],["不粘时间","80–100","s"],["自由发泡密度","24–25.5","kg/m³"],["料温","20–25","℃"],["模温","35–40","℃"]],
+  note:"同一体系的手工/低压口径是另一组数：乳白 10–16 s、凝胶 70–90 s、不粘 100–120 s、自由发泡密度 25–26 kg/m³——连设备口径都要绑在卡上。"},
+ "DOW": {name:"Dow 家电泡沫体系（VORASURF 助剂资料）", nature:"典型值 · 厂商资料", src:"Dow VORASURF RF 5374 家电泡沫资料（报告 §1）",
+  cells:[["乳白时间","3","s"],["凝胶/拉丝","49–52","s"],["自由发泡密度","23.5–24.0","kg/m³"]],
+  note:"乳白只有 3 s，在这个体系里是正常值——拿 SPC 的 8–12 s 去判它就会误报，这正是「阈值必须绑体系」的实例。该体系的不粘时间与料温/模温，报告未给出数值，不臆填。"},
+ "BASF": {name:"BASF 专利体系（实施例）", nature:"专利实施例 · 不是通用标准", src:"BASF 专利实施例（报告 §1）",
+  cells:[["乳白时间","9","s"],["凝胶/拉丝","63–65","s"],["纤维时间","61","s"],["自由发泡密度","23.3","kg/m³"],["异氰酸酯指数","113",""]],
+  note:"环戊烷 14.5–16 份、指数 113 的实施例数据，只说明这个实施例的反应性长相，不能当其他体系的判定线。"}
+};
+/* 工艺窗口速查：通用范围（多来源交叉一致），参考窗口、非判废线 */
+var WINDOWS = [
+ {id:"mat", label:"料温", unit:"℃", lo:20, hi:25, input:true,
+  low:"料温偏低 → 组合聚醚黏度显著上升：流动差、撞击混合变差，远端欠充、并泡大孔、密度分布恶化。",
+  high:"料温偏高 → 乳白/凝胶同步提前，可流时间短于充模所需：前锋提前凝胶裹气、末端空洞、熔合线弱粘结。"},
+ {id:"mold", label:"模温/夹具温", unit:"℃", lo:35, hi:45, input:true,
+  low:"模温偏低 → 近壁料反应慢、黏度高，像「冻」在壁上：表皮厚而脆、与内胆粘结差、远端欠充、脱模后收缩凹陷。",
+  high:"模温偏高 → 近壁固化过快、泡孔粗，易粘模，脱模后膨胀（后膨胀）增大。"},
+ {id:"press", label:"混合压力", unit:"bar", lo:100, hi:150, input:true,
+  low:"混合压力偏低 → 撞击混合能量不足，两种料混不匀：条纹/云雾状空洞、局部软脆。还要查两组分压力是否失衡、单侧是否跌落。",
+  high:"高于常用窗口：报告未给出偏高本身的直接缺陷后果（部分体系/设备窗口可达 100–200 bar），重点核对双组分压力平衡与枪头状态。"},
+ {id:"index", label:"异氰酸酯指数", unit:"", lo:105, hi:130, input:false,
+  low:"指数过低 → NCO 不足：反应不完全、泡沫软/粘、强度与粘结差、收缩。",
+  high:"指数过高 → 脆性上升、粘结强度下降。"},
+ {id:"demold", label:"脱模时间", unit:"min", lo:4, hi:10, input:false,
+  low:"脱模过早 → 固化不足：后收缩、撕裂状空洞、脱模后膨胀/鼓包。体系差异极大（如某专利体系宣称 140 s，仅为其实施例值，不可泛化）。",
+  high:""}
+];
+/* 杯泡分流加权：异常→出枪之前（料/配比/混合/料温）；正常→模具/排气/注料侧 */
+var CUP_PRE = {"R-V08":1,"R-V09":1,"R-V10":1,"R-V11":1,"R-V12":1,"R-V13":1,"R-M01":1};
+var CUP_POST = {"R-V01":1,"R-V02":1,"R-V03":1,"R-V04":1,"R-V05":1,"R-V06":1,"R-V07":1,"R-V15":1};
+var CUP_WHY_BAD = "因为杯泡试验异常——同一台机器、同一批料打出来的杯泡都不正常，说明问题在料液出枪之前就已经存在，这类「料 / 配比 / 混合 / 料温」方向的嫌疑 +10 分";
+var CUP_WHY_OK = "因为杯泡试验正常——料、配比、混合这一段被杯泡证明没问题，问题更可能出在模具、排气、注料这一侧，这类嫌疑 +10 分";
+var cupState = "none"; /* none=未做 ok=正常 bad=异常 */
+/* 空洞分型（报告 §3 五分型 + 表面针孔）：形态指纹 + 本体表型对应 */
+var VOID_TYPES = {
+ "3A":{name:"困气型", code:"V-GAS", fp:"位置高度重复（同型号同部位），多在料流末端、箱体高点、筋/线缆槽尽头；孔壁光滑，形状与腔体局部几何吻合，同批每件都有。"},
+ "3B":{name:"充填不足型", code:"V-FILL", fp:"空洞伴整体或远端密度偏低、泡沫未贴壁；常与称重注料量偏低或波动大同时出现，补料后消失。"},
+ "3C":{name:"混合不良型", code:"V-MIX", fp:"不规则大孔与致密区交错、局部发软或发脆、颜色/条纹不均；杯泡同样出现条纹/大孔——这是它与困气型的关键区别。"},
+ "3D":{name:"水分/污染并泡型", code:"V-CELL", fp:"泡孔粗大、大小悬殊、孔壁破裂连通（并泡），密度偏低但发脆；或局部针孔群，多在换桶/换批后突现。"},
+ "3E":{name:"收缩型", code:"V-SHRINK", fp:"出模时不明显、冷却/放置后才出现内部空腔或表面凹陷对应的内空；时间依赖性（延迟出现）是它的指纹。"},
+ "3F":{name:"表面针孔/鼓泡", code:"本体暂无独立表型代码", fp:"泡沫表面的针孔/鼓泡：表面裹气、污染成核、混合不完全、脱模剂不相容或涂布不当、模具表面水分与异氰酸酯反应生成 CO₂。"}
+};
+/* 每条规则的「行业依据」（报告规则要点 + 出处简称）；无对应依据的留空、不硬凑 */
+var BASIS = {
+ "R-V01":{t:"困气型空洞的鉴别：换注料量/料温后位置基本不变、剖切位置与料流末端一致；核查排气通道是否被溢料、脱模剂积垢堵死。", s:"行业知识报告 §3A（厂商故障表 / PFA 术语交叉）"},
+ "R-V02":{t:"注料速度过快裹气是困气型的成因之一；减速注料试验可显著减轻，可作鉴别试验。", s:"行业知识报告 §3A"},
+ "R-V03":{t:"注料姿态改变会使料流末端与气袋位置迁移，空洞位置随姿态变化可作鉴别；倾角的具体角度无可靠公开出处，不给数值。", s:"行业知识报告 §5"},
+ "R-V04":{t:"充填不足型与注料量/最小充填密度相关，校准注料量用称重法；过填充率的实施例口径约 10–16%。", s:"行业知识报告 §3B（Dow 实施例口径）"},
+ "R-V05":{t:"过滤器堵塞的源头常在 MDI 侧：MDI 遇水生成聚脲固体，可造成过滤器、泵和管线堵塞。出现「单侧压力升+流量降+混合变差」先查 MDI 受潮污染，别先换泵。", s:"Covestro TDS 机理 · 行业知识报告 §4"},
+ "R-V06":{t:"注料口密封不良会造成泄漏型缺料；真空发泡工艺下，枪头-注料口、枪头-模具的双重密封是专门的设计点。", s:"行业知识报告 §3B/§5（海尔发泡密封机构专利）"},
+ "R-V07":{t:"模温低 → 近壁料提前「冻住」、远端欠充；温度类缺陷的指纹是「位置与温度场对应、随季节/班次漂移」。", s:"行业知识报告 §2"},
+ "R-V08":{t:"料温低 → 组合聚醚黏度显著上升（冰箱体系 25 ℃ 黏度典型 2500–4000 mPa·s），撞击混合能量相对不足、流动阻力大。", s:"行业知识报告 §2/§6"},
+ "R-V09":{t:"异氰酸酯指数硬泡常用段 105–130；过低 → 反应不完全、软/粘、收缩，过高 → 脆性上升、粘结下降。现场「指数漂移」的等价证据是配比漂移 + 杯泡反应性漂移。", s:"行业知识报告 §1（专利/文献）"},
+ "R-V10":{t:"来料类根因的指纹：与批次/换桶时点强相关、整线同步出现、杯泡先行异常。来料检验三件套：组合聚醚（黏度/羟值/水分）、MDI（NCO%/黏度/外观）、杯泡反应性复核。", s:"行业知识报告 §6"},
+ "R-V11":{t:"高压撞击混合压力常用窗口约 100–150 bar；杯泡同样出现条纹/大孔，是「问题在出枪之前」的关键鉴别。", s:"行业知识报告 §3C/§4"},
+ "R-V12":{t:"枪头注料后自清洁活塞须把混合室残料推出；残料固化会改变混合室截面，造成混合不良与飞溅。", s:"行业知识报告 §4（设备手册口径）"},
+ "R-V13":{t:"并泡粗孔源于发泡与凝胶失衡、硅油稳泡不足/失效；这类问题杯泡即可复现，不必等剖切成品。", s:"行业知识报告 §8（厂商故障表）"},
+ "R-V14":{t:"收缩型空洞：脱模过早、密度过低时，闭孔泡冷却后内压下降、泡壁撑不住；延迟出现是其指纹，与充填不足的区别是注料量正常、刚出模剖切无洞。", s:"行业知识报告 §3E"},
+ "R-V15":{t:"脱粘/分层先看破坏面：界面光滑无泡沫残留 = 界面未粘；带泡沫撕裂 = 粘结已形成而泡沫本体弱——两者根因相反。粘结强度按 GB/T 26689—2024 附录 A（资料性）方法测定复测，不得称强制要求值。", s:"行业知识报告 §8 · GB/T 26689—2024"},
+ "R-S01":{t:"收缩/凹陷源于闭孔泡内压随冷却下降 + 泡壁强度不足（密度低、凝胶不足），延迟出现（出模后数小时至数日加重）为指纹。", s:"行业知识报告 §8"},
+ "R-S02":{t:"脱模过早、后熟化不足是收缩凹陷的常见成因；留置复测凹陷变化可作鉴别。", s:"行业知识报告 §8"},
+ "R-C01":{t:"开裂常见于脆性过高（指数过高、过度交联）或脱模过早受力；杯泡脆性同步异常 → 配方/配比问题，仅脱模瞬间裂 → 脱模时间/模温问题。", s:"行业知识报告 §8"},
+ "R-D01":{t:"分层先看破坏面形态再定方向：界面干净分离查界面侧（温度/污染/水汽），泡体撕离查泡沫本体强度；粘结强度按 GB/T 26689—2024 附录 A（资料性）方法测定复测，不得称强制要求值。", s:"行业知识报告 §8 · GB/T 26689—2024"},
+ "R-M01":{t:"密度按 GB/T 6343 测定；泡沫指标异常会沿「导热/密度 → 箱体热负荷 → 耗电量」传导到整机能效（GB 12021.2 考核），能效抽检不合格应作为泡沫端回溯触发信号。", s:"行业知识报告 §7"}
+};
+</script>
+<script>
+/* ============================================================
+交互与推理引擎
+评分（模型第 7 节工程简化版）：
+Score = round(先验×100) + Σ支持证据权重(10~20) − Σ排除证据(25/条)
+强排除命中 → 直接归零；结果 clamp 到 0~100。
+============================================================ */
+function $(id){ return document.getElementById(id);}
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms);});}
+var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function wait(ms){ return sleep(REDUCED? Math.min(ms,60): ms);}
+
+/* ---------- 表型下拉 ---------- */
+(function(){
+var sel = $("selPheno"), html = "";
+Object.keys(PHENOS).forEach(function(k){
+html += '<option value="'+k+'">'+k+" · "+PHENOS[k].name+"（"+PHENOS[k].desc+'）</option>';
+});
+sel.innerHTML = html; sel.value = "V-GAS";
+})();
+
+/* ---------- 证据面板 ---------- */
+function renderFacts(){
+var html = "";
+FACT_GROUPS.forEach(function(gname, gi){
+html += '<div class="fgroup">'+gname+'</div>';
+FACTS.forEach(function(f){
+if(f.g!==gi) return;
+var st = factState[f.id];
+html += '<div class="fact'+(factAuto[f.id]?" auto":"")+'" data-fact="'+f.id+'">'
++ '<span class="fname">'+f.label+'</span>'
++ '<span class="seg" role="group" aria-label="'+f.label+'">'
++ '<button data-s="hit" class="'+(st==="hit"?"on":"")+'">命中</button>'
++ '<button data-s="miss" class="'+(st==="miss"?"on":"")+'">未命中</button>'
++ '<button data-s="none" class="'+(st==="none"?"on":"")+'">无数据</button>'
++ '</span></div>';
+});
+});
+$("factGroups").innerHTML = html;
+var segs = $("factGroups").querySelectorAll(".fact");
+for(var i=0;i<segs.length;i++){
+(function(row){
+var fid = row.getAttribute("data-fact");
+var btns = row.querySelectorAll("button");
+for(var j=0;j<btns.length;j++){
+btns[j].addEventListener("click", function(){
+factState[fid] = this.getAttribute("data-s");
+delete factAuto[fid];
+renderFacts();
+});
+}
+})(segs[i]);
+}
+}
+function setFact(id, state, auto){
+factState[id] = state;
+if(auto) factAuto[id]=true; else delete factAuto[id];
+}
+
+/* ---------- 表型三项 → 证据同步 ---------- */
+function syncFromForm(){
+var r = $("selRegion").value, d = $("selDist").value, w = $("selWall").value;
+if(r==="high"){ setFact("f_highest","hit",1); setFact("f_notvent","miss",1);}
+if(r==="far"){ setFact("f_farend","hit",1);}
+if(r==="mid"){ setFact("f_disp","hit",1);}
+if(r==="intf"){ setFact("f_interface","hit",1);}
+if(r==="other"){ setFact("f_notvent","hit",1); setFact("f_highest","miss",1);}
+if(d==="samecav"){ setFact("f_samecav","hit",1);}
+if(d==="disp"){ setFact("f_disp","hit",1);}
+if(d==="stripe"){ setFact("f_stripe","hit",1);}
+if(d==="intf"){ setFact("f_interface","hit",1);}
+if(w==="smooth"){ setFact("f_smooth","hit",1); setFact("f_tear","miss",1);}
+if(w==="tear"){ setFact("f_tear","hit",1); setFact("f_smooth","miss",1);}
+if(w==="coarse"){ setFact("f_coarse","hit",1);}
+renderFacts();
+}
+["selRegion","selDist","selWall"].forEach(function(id){ $(id).addEventListener("change", syncFromForm);});
+
+/* ---------- 页签 ---------- */
+var tabs = document.querySelectorAll(".tab");
+for(var ti=0; ti<tabs.length; ti++){
+tabs[ti].addEventListener("click", function(){
+for(var k=0;k<tabs.length;k++) tabs[k].setAttribute("aria-selected","false");
+this.setAttribute("aria-selected","true");
+["form","text","img"].forEach(function(n){ $("pane-"+n).classList.toggle("on", n===this.getAttribute("data-tab"));}, this);
+});
+}
+function showTab(name){
+for(var k=0;k<tabs.length;k++) tabs[k].setAttribute("aria-selected", tabs[k].getAttribute("data-tab")===name? "true":"false");
+["form","text","img"].forEach(function(n){ $("pane-"+n).classList.toggle("on", n===name);});
+}
+
+/* ---------- 文字解析 ---------- */
+var KEYWORDS = [
+{kws:["最高点"], f:"f_highest", ph:"V-GAS", note:"位置在最高点 → 困气最容易积在高处，先往排气方向想"},
+{kws:["顶部","顶角","上部"], f:"f_highest", ph:"V-GAS", note:"位置靠顶部 → 按最高点区域处理，指向困气方向"},
+{kws:["光滑"], f:"f_smooth", note:"内壁光滑 → 气体被困住形成的典型长相"},
+{kws:["同一个模腔","同一模腔","同模腔","同一个模","连续出现","连续几台","连着好几台","反复出现","同位置"], f:"f_samecav", note:"同腔连发同位置 → 问题锁定在这套模自己身上"},
+{kws:["其他模腔也","每个腔都","别的腔也"], f:"f_othercav", note:"多个模腔同发 → 大家共用的料和工艺嫌疑变大"},
+{kws:["只有这一个腔","就这一个模腔","其他腔正常","别的腔没事","其他模腔正常"], f:"f_othercav", st:"miss", note:"其他模腔正常 → 对比证据：问题是这一个腔的局部问题"},
+{kws:["其他线也","别的线也","全线都","其他产线也"], f:"f_sameline", note:"多线同发 → 指向共用的料批次/配比"},
+{kws:["保养逾期","逾期","很久没保养","没保养"], f:"f_ventoverdue", note:"保养逾期 → 排气孔、枪头这类靠保养的部件嫌疑上升"},
+{kws:"PLACEHOLDER"}
+];
+KEYWORDS.pop();
+KEYWORDS = KEYWORDS.concat([
+{kws:["排气孔通畅","排气孔是通的","排气孔刚保养"], f:"f_ventok", note:"排气孔通畅 → 堵塞方向可降分，转查注料速度"},
+{kws:["称重偏低","重量偏低","称重低","重量不够","分量不足"], f:"f_weightlow", ph:"V-FILL", note:"称重偏低 → 料打少了，指向注料量/计量方向"},
+{kws:["称重合格","称重正常","重量合格","重量正常"], f:"f_weightok", note:"称重合格 → 可以排除注料量不足"},
+{kws:["称重偏高","重量偏高"], f:"f_weighthigh", ph:"C", note:"称重偏高 → 过填充方向"},
+{kws:["计量泵"], f:"f_meterdrift", ph:"V-FILL", note:"提到计量泵 → 计量漂移进入证据"},
+{kws:["模温低","模温偏低","模具温度低","模温不够","模温达不到"], f:"f_moldlow", ph:"V-DISP", note:"模温偏低 → 料变稠、流动变差、前锋提前凝胶"},
+{kws:["模温正常","模温达标"], f:"f_moldok", note:"模温正常 → 模温方向可排除"},
+{kws:["天冷","气温低","冬天","冬季","首班"], f:"f_ambientlow", ph:"V-DISP", note:"环境温度低 → 模温更难达标，弥散空洞高发场景"},
+{kws:["料温高","料温低","料温异常"], f:"f_mattemp", ph:"V-DISP", note:"料温异常 → 黏度或反应速度出问题"},
+{kws:["条纹","云雾","未混","没混匀","混料痕"], f:"f_stripe", ph:"V-MIX", note:"条纹/未混料痕 → 混合不良方向，这是很硬的证据"},
+{kws:["远注料口","离注料口最远","远端"], f:"f_farend", ph:"V-FILL", note:"远注料口端 → 料流不到的最远处，充填不足方向"},
+{kws:["弥散","到处都是","遍布","很多小孔","密密麻麻","中小空洞"], f:"f_disp", ph:"V-DISP", note:"弥散分布 → 反应/流动体系方向，不是单个点的问题"},
+{kws:["撕裂"], f:"f_tear", ph:"V-SHRINK", note:"撕裂状 → 固化不足、脱模后收缩撕开的方向"},
+{kws:["沿内胆","内胆边","界面","空鼓"], f:"f_interface", ph:"V-INTF", note:"沿界面分布 → 预热/贴合/内胆表面方向"},
+{kws:["泡孔粗","大泡孔","并泡","泡孔大","泡孔粗大"], f:"f_coarse", ph:"V-CELL", note:"泡孔粗大并泡 → 稳泡体系方向"},
+{kws:["溢料","漏料","冒料"], f:"f_overflow", ph:"L", note:"合模缝溢料 → 密封失效漏料方向"},
+{kws:["配比偏","配比不对","指数偏","配比异常"], f:"f_ratio", note:"配比偏移 → 反应与发泡失配"},
+{kws:["配比正常","配比合格"], f:"f_ratiook", note:"配比正常 → 配比方向可排除"},
+{kws:["混合压力低","混合压力不足","压力不足","压力波动","压力低"], f:"f_presslow", ph:"V-MIX", note:"混合压力不足 → 撞击混合能量不够"},
+{kws:["混合压力正常","压力达标","压力稳定"], f:"f_pressok", note:"混合压力达标 → 混合能量方向可排除"},
+{kws:["换了料","换料","换了一批料","新到的料"], f:"f_batchtime", note:"换料时间吻合 → 这批料进入重点嫌疑"},
+{kws:["枪头磨损","枪头旧","枪头用了很久","枪头超期"], f:"f_headold", ph:"V-MIX", note:"枪头超周期 → 磨损/堵塞方向"},
+{kws:["刚换枪头","新枪头","枪头刚换"], f:"f_headnew", note:"枪头刚换 → 磨损方向可降分"},
+{kws:["注料太快","打料太快","注料时间短","注得快"], f:"f_shorttime", ph:"V-GAS", note:"注料过快 → 前锋封排气方向"},
+{kws:["注料时间长","注料变慢","注得很慢"], f:"f_longtime", ph:"V-FILL", note:"注料变慢 → 流量衰减（滤芯/管路）方向"},
+{kws:["注料时间正常"], f:"f_injok", note:"注料时间正常 → 注速方向可排除"},
+{kws:["固化时间短","赶节拍","提速","脱模早","固化不够"], f:"f_curecut", ph:"V-SHRINK", note:"固化被压缩 → 脱模时泡沫还没长结实"},
+{kws:["固化时间够","固化达标"], f:"f_cureok", note:"固化达标 → 固化方向可排除"},
+{kws:["预热不足","预热不够","内胆凉","预热温度低"], f:"f_preheat", ph:"V-INTF", note:"预热不足 → 界面贴合方向"},
+{kws:["换了模","换模","修了夹具","夹具维修"], f:"f_moldchange", ph:"V-GAS", note:"近期动过夹具 → 困气点可能被挪位置"},
+{kws:["密封不好","密封异常"], f:"f_sealbad", note:"密封抽检异常 → 漏料方向"},
+{kws:["拉丝时间短","反应太快"], f:"f_cupshort", ph:"V-DISP", note:"杯泡反应变快 → 反应体系有变化"}
+]);
+$("btnParse").addEventListener("click", function(){
+var raw = $("txtDesc").value.trim();
+if(!raw){ $("parseOut").classList.add("on"); $("parseText").textContent = "先写一句缺陷描述再解析，比如「顶部大空洞、内壁光滑、同模腔连发」。"; $("parseNotes").innerHTML=""; return;}
+var matched = [], votes = {}, usedFacts = {};
+var allKw = [];
+KEYWORDS.forEach(function(rule, ri){ rule.kws.forEach(function(kw){ allKw.push({kw:kw, ri:ri});});});
+allKw.sort(function(a,b){ return b.kw.length - a.kw.length;});
+var found = []; /* {kw, ri, idx} */
+var occupied = raw.split("").map(function(){ return false;});
+allKw.forEach(function(item){
+var idx = raw.indexOf(item.kw);
+while(idx >= 0){
+var ok = true;
+for(var c=idx;c<idx+item.kw.length;c++) if(occupied[c]) { ok=false; break;}
+if(ok){
+for(var c2=idx;c2<idx+item.kw.length;c2++) occupied[c2]=true;
+found.push({kw:item.kw, ri:item.ri, idx:idx});
+}
+idx = raw.indexOf(item.kw, idx+1);
+}
+});
+found.sort(function(a,b){ return a.idx-b.idx;});
+/* 高亮 */
+var html = "", pos = 0;
+found.forEach(function(m){ html += esc(raw.slice(pos, m.idx)) + "<mark>"+esc(m.kw)+"</mark>"; pos = m.idx + m.kw.length;});
+html += esc(raw.slice(pos));
+$("parseText").innerHTML = html || esc(raw);
+/* 应用 */
+var notes = [];
+var seenRi = {};
+found.forEach(function(m){
+if(seenRi[m.ri]) return; seenRi[m.ri]=true;
+var rule = KEYWORDS[m.ri];
+setFact(rule.f, rule.st || "hit", 1);
+if(!usedFacts[rule.f]){ usedFacts[rule.f]=true;}
+if(rule.ph) votes[rule.ph] = (votes[rule.ph]||0)+1;
+notes.push('<li>识别到 <b>「'+esc(m.kw)+'」</b> → '+esc(rule.note)+'（已填入证据区：'+esc(FACT_LABEL[rule.f])+' = '+((rule.st==="miss")?"未命中":"命中")+'）</li>');
+matched.push(m.kw);
+});
+var bestPh = null, bestV = 0;
+Object.keys(votes).forEach(function(p){ if(votes[p]>bestV){ bestV=votes[p]; bestPh=p;}});
+if(bestPh){ $("selPheno").value = bestPh; notes.push('<li>综合关键词判断，缺陷表型最像 <b>'+bestPh+" · "+PHENOS[bestPh].name+'</b>，已自动选好（可在「结构化表型」页签里改）。</li>');}
+if(!found.length){ notes.push('<li>没有识别到已知关键词。可以换个说法（位置、形态、哪个模腔、保养/称重/温度情况），或直接到证据区手动确认。</li>');}
+$("parseNotes").innerHTML = notes.join("");
+$("parseOut").classList.add("on");
+renderFacts();
+});
+
+/* ---------- 图片（模拟识别） ---------- */
+$("dropBox").addEventListener("click", function(){ $("fileInp").click();});
+$("fileInp").addEventListener("change", function(){
+var file = this.files && this.files[0];
+if(!file) return;
+var url = URL.createObjectURL(file);
+var img = $("upImg"); img.src = url; img.style.display = "block";
+$("dropHint").style.display = "none";
+$("dropBox").classList.add("scanning");
+$("imgResult").innerHTML = '<p class="hint">正在「识别」照片中的缺陷区域…（模拟过程）</p>';
+setTimeout(function(){
+$("dropBox").classList.remove("scanning");
+$("imgResult").innerHTML =
+'<div style="border:1px solid var(--teal);border-radius:8px;padding:12px 14px;background:var(--teal-d)">'
++ '<b style="color:var(--teal)">模拟识别结果</b>（Demo 中图像识别为模拟，实际项目需接入视觉模型）<br/>'
++ '识别到的样子：<b>顶部区域有一个孤立大空洞，内壁光滑</b> → 表型判断为 <b>V-GAS 困气型</b>。'
++ '<div style="margin-top:10px"><button class="btn teal sm" id="btnAdopt">采用这个结果，填入表单</button></div></div>';
+$("btnAdopt").addEventListener("click", function(){
+$("selPheno").value = "V-GAS";
+$("selRegion").value = "high"; $("selWall").value = "smooth"; $("selDist").value = "single";
+syncFromForm(); showTab("form");
+$("imgResult").innerHTML = '<p class="hint" style="color:var(--teal)">已填入：请到证据区补充同腔连发、保养记录等信息（照片看不出这些），然后点「开始推理」。</p>';
+});
+}, REDUCED? 300: 2300);
+});
+
+/* ---------- 预置案例 ---------- */
+var PRESETS = {
+vent: { pheno:"V-GAS", region:"high", dist:"samecav", wall:"smooth",
+facts:{ f_ventoverdue:"hit", f_injok:"hit", f_weightok:"hit", f_moldok:"hit", f_othercav:"miss", f_batchtime:"miss"},
+label:"案例一 · 排气孔堵塞"},
+meter: { pheno:"V-FILL", region:"far", dist:"single", wall:"",
+facts:{ f_weightlow:"hit", f_meterdrift:"hit", f_farend:"hit", f_overflow:"miss", f_longtime:"miss", f_pressok:"hit", f_moldok:"hit"},
+label:"案例二 · 计量漂移充填不足"},
+moldtemp: { pheno:"V-DISP", region:"mid", dist:"disp", wall:"",
+facts:{ f_moldlow:"hit", f_ambientlow:"hit", f_disp:"hit", f_ratiook:"hit", f_sameline:"miss", f_mattemp:"miss"},
+label:"案例三 · 模温过低弥散空洞"}
+};
+function resetAll(){
+FACTS.forEach(function(f){ factState[f.id]="none"; delete factAuto[f.id];});
+$("selRegion").value=""; $("selDist").value=""; $("selWall").value="";
+cupState = "none"; renderCupSeg();
+WINDOWS.forEach(function(w){ if(w.input){ var inp = $("win-"+w.id); if(inp){ inp.value=""; checkWin(w);} }});
+}
+document.querySelectorAll(".preset").forEach(function(btn){
+btn.addEventListener("click", function(){
+var p = PRESETS[this.getAttribute("data-preset")];
+resetAll(); showTab("form");
+$("selPheno").value = p.pheno;
+$("selRegion").value = p.region||""; $("selDist").value = p.dist||""; $("selWall").value = p.wall||"";
+syncFromForm();
+Object.keys(p.facts).forEach(function(fid){ setFact(fid, p.facts[fid], 0);});
+renderFacts();
+$("logBox").innerHTML = '<div><span class="lt">提示</span>已载入「'+p.label+'」：表型和证据都填好了，直接点下面的「开始推理」看全过程。</div>';
+$("inputCard").scrollIntoView({behavior: REDUCED?"auto":"smooth"});
+});
+});
+$("btnReset").addEventListener("click", function(){
+resetAll(); renderFacts();
+$("logBox").innerHTML=""; $("hypoList").innerHTML = '<p class="empty-note">已清空。重新填写后点「开始推理」。</p>';
+$("resultCard").style.display="none"; drawGraph([]);
+document.querySelectorAll(".pstep").forEach(function(el){ el.classList.remove("active","done"); el.querySelector(".verdict").textContent="";});
+});
+
+/* ---------- 推理引擎 ---------- */
+function buildCandidates(pheno){
+var list = [], seen = {};
+RULES.forEach(function(r){ if(r.ph.indexOf(pheno)>=0){ list.push({rule:r, near:false, mult:1}); seen[r.id]=1;}});
+(NEIGHBORS[pheno]||[]).forEach(function(np){
+RULES.forEach(function(r){ if(r.ph.indexOf(np)>=0 &&!seen[r.id]){ list.push({rule:r, near:true, mult:0.6}); seen[r.id]=1;}});
+});
+list.sort(function(a,b){ return (b.rule.prior*b.mult)-(a.rule.prior*a.mult);});
+return list.slice(0, 10);
+}
+function scoreCandidate(cand){
+var r = cand.rule;
+var priorScore = Math.round(r.prior * 100 * cand.mult);
+var score = priorScore, details = [], zeroed = false;
+r.sup.forEach(function(e){
+var st = factState[e.f];
+if(st === e.t){ score += e.w; details.push({type:"sup", pts:e.w, fact:e.f, why:e.why});}
+else if(st === "none"){ details.push({type:"nodata", fact:e.f});}
+});
+r.exc.forEach(function(e){
+var st = factState[e.f];
+if(st === e.t){
+if(e.strong){ zeroed = true; details.push({type:"zero", fact:e.f, why:e.why});}
+else { score -= 25; details.push({type:"exc", pts:-25, fact:e.f, why:e.why});}
+}
+});
+if(!zeroed){
+var cupPts = 0;
+if(cupState==="bad" && CUP_PRE[r.id]) cupPts = 10;
+if(cupState==="ok" && CUP_POST[r.id]) cupPts = 10;
+if(cupPts){ score += cupPts; details.push({type:"cup", pts:cupPts, why: cupState==="bad"? CUP_WHY_BAD: CUP_WHY_OK});}
+}
+if(zeroed) score = 0;
+score = Math.max(0, Math.min(100, score));
+return { rule:r, near:cand.near, priorScore:priorScore, score:score, zeroed:zeroed, details:details};
+}
+function gainRank(g){ return g==="高"?3:(g==="中"?2:1);}
+function costRank(c){ return c==="低"?3:(c==="中"?2:1);}
+function buildChecks(scored){
+var out = [], seen = {};
+if(cupState==="none"){
+out.push({a:"先做杯泡分流试验（同体系同温打一杯，量乳白/凝胶/不粘时间，看截面有无条纹大孔，并与体系参数卡基线比对）", cost:"低", gain:"高", forRule:(scored[0]||{}).rule||RULES[0], rank:1e9,
+note:"还没做杯泡，等于还没把问题切成两半：杯泡异常 → 查出枪之前（料/配比/混合/料温）；杯泡正常 → 查模具/排气/注料。成本最低、分流价值最高，所以排在所有核查之前。"});
+}
+scored.slice(0,3).forEach(function(s){
+if(s.score<=0) return;
+s.rule.checks.forEach(function(ck){
+if(seen[ck.a]) return; seen[ck.a]=1;
+out.push({a:ck.a, cost:ck.cost, gain:ck.gain, forRule:s.rule, rank: gainRank(ck.gain)*10 + costRank(ck.cost)});
+});
+});
+out.sort(function(a,b){ return b.rank-a.rank;});
+return out.slice(0,5);
+}
+
+/* ---------- 日志 ---------- */
+function log(html){
+var box = $("logBox");
+var t = new Date(); var ts = ("0"+t.getMinutes()).slice(-2)+":"+("0"+t.getSeconds()).slice(-2);
+box.innerHTML += '<div><span class="lt">'+ts+'</span>'+html+'</div>';
+box.scrollTop = box.scrollHeight;
+}
+function setStep(n, state, verdict){
+var el = document.querySelector('.pstep[data-step="'+n+'"]');
+if(!el) return;
+el.classList.remove("active","done");
+if(state) el.classList.add(state);
+if(verdict!=null) el.querySelector(".verdict").textContent = verdict;
+}
+
+/* ---------- 因果图 ---------- */
+var lastScored = [];
+function scoreColor(s, zeroed){
+if(zeroed || s===0) return "#39465a";
+if(s>=60) return "#4cc26e"; if(s>=30) return "#f2a63b"; return "#54687f";
+}
+function drawGraph(scored){
+var svg = $("graph");
+var W = 940, rowH = 56, top = 26;
+var H = Math.max(190, top*2 + Math.max(scored.length,1)*rowH);
+svg.setAttribute("viewBox", "0 0 "+W+" "+H);
+if(!scored.length){
+svg.innerHTML = '<text x="'+(W/2)+'" y="'+(H/2)+'" fill="#6d7f92" font-size="15" text-anchor="middle">开始推理后，嫌疑名单会出现在这里，线条会一条条连上。</text>';
+return;
+}
+var pheno = $("selPheno").value;
+var midY = H/2;
+var s = "";
+s += '<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7fa6c9"/></marker></defs>';
+/* 缺陷节点 */
+s += '<g><rect x="18" y="'+(midY-40)+'" width="212" height="80" rx="9" fill="#3a2a12" stroke="#f2a63b" stroke-width="1.6"/>'
++ '<text x="124" y="'+(midY-12)+'" fill="#ffd9a0" font-size="15.5" font-weight="700" text-anchor="middle">'+pheno+" · "+PHENOS[pheno].short+'</text>'
++ '<text x="124" y="'+(midY+13)+'" fill="#c9a566" font-size="12" text-anchor="middle">本次缺陷（推理起点）</text>'
++ '<text x="124" y="'+(midY+31)+'" fill="#c9a566" font-size="11.5" text-anchor="middle">← 哪些原因能导致它？</text></g>';
+scored.forEach(function(sc, i){
+var y = top + i*rowH + rowH/2;
+var col = sc.pending ? "#7fa6c9" : scoreColor(sc.score, sc.zeroed);
+var d = "M 230 "+midY+" C 400 "+midY+", 420 "+y+", 598 "+y;
+s += '<path class="edge" id="edge-'+sc.rule.id+'" d="'+d+'" stroke="'+col+'" marker-end="url(#arr)" stroke-dasharray="700" stroke-dashoffset="700"/>';
+});
+scored.forEach(function(sc, i){
+var y = top + i*rowH + rowH/2;
+var col = sc.pending ? "#7fa6c9" : scoreColor(sc.score, sc.zeroed);
+var dim = !sc.pending && (sc.zeroed || sc.score===0);
+s += '<g class="gnode" data-rule="'+sc.rule.id+'" opacity="'+(dim?0.55:1)+'">'
++ '<rect x="606" y="'+(y-24)+'" width="316" height="48" rx="8" fill="#1a212d" stroke="'+col+'" stroke-width="1.6"/>'
++ '<text x="620" y="'+(y+2)+'" fill="#e9eef4" font-size="14.5" font-weight="600">'+esc(sc.rule.cause)+(sc.near?' <tspan fill="#f2a63b" font-size="11.5">（邻近表型）</tspan>':"")+'</text>'
++ '<text x="908" y="'+(y+3)+'" fill="'+col+'" font-size="17" font-weight="700" text-anchor="end" font-family="JetBrains Mono,monospace">'+(sc.pending?"待评分":(dim?"已排除":sc.score+" 分"))+'</text>'
++ '<text x="620" y="'+(y+17)+'" fill="#6d7f92" font-size="11">'+sc.rule.id+" · "+sc.rule.cat+'类原因 · 点击看解释</text></g>';
+});
+svg.innerHTML = s;
+var nodes = svg.querySelectorAll(".gnode");
+for(var i=0;i<nodes.length;i++){
+nodes[i].addEventListener("click", function(){ showExplain(this.getAttribute("data-rule"));});
+}
+}
+function animateEdges(scored){
+scored.forEach(function(sc, i){
+var p = document.getElementById("edge-"+sc.rule.id);
+if(!p) return;
+p.style.transition = "none"; p.style.strokeDashoffset = "700";
+setTimeout(function(){ p.style.transition = "stroke-dashoffset.8s ease"; p.style.strokeDashoffset = "0";}, REDUCED?0:120*i);
+});
+}
+function showExplain(ruleId){
+var r = RULE_BY_ID[ruleId]; if(!r) return;
+var box = $("explainBox");
+box.innerHTML = '<h3>'+esc(r.hyp)+'<span class="rid">'+r.id+" · "+r.cat+'类 · 历史占比（先验）'+Math.round(r.prior*100)+'%</span></h3>'
++ '<p><b>这是什么意思：</b>'+esc(r.ex.what)+'</p>'
++ '<p><b>为什么会导致这种缺陷：</b>'+esc(r.ex.why)+'</p>'
++ '<p><b>它的典型特征：</b>'+esc(r.ex.signs)+'</p>'
++ '<p><b>确认后的标准处置：</b>'+esc(r.fix)+'</p>';
+box.classList.add("on");
+box.scrollIntoView({behavior: REDUCED?"auto":"smooth", block:"nearest"});
+}
+
+/* ---------- 评分明细渲染 ---------- */
+function renderHypos(scored){
+var sumPos = scored.reduce(function(a,s){ return a + (s.score>0? s.score:0);}, 0);
+var html = "";
+scored.forEach(function(sc, i){
+var r = sc.rule;
+var conf = sumPos>0 && sc.score>0? Math.round(sc.score/sumPos*100): 0;
+var col = scoreColor(sc.score, sc.zeroed);
+var gainSum = sc.details.filter(function(d){return d.type==="sup"||d.type==="cup";}).reduce(function(a,d){return a+d.pts;},0);
+html += '<div class="hypo'+(sc.zeroed||sc.score===0?" excluded":"")+'">'
++ '<div class="hypo-top"><span class="rank">嫌疑 #'+(i+1)+'</span><h3>'+esc(r.hyp)+'</h3>'
++ '<span class="rid">'+r.id+'</span><span class="cat">'+r.cat+'类原因</span>'
++ (sc.near?'<span class="tag-near">邻近表型候选 · 起步分打六折</span>':"")
++ ((sc.zeroed)?'<span class="tag-out">被强排除证据一票否决</span>':"")
++ '</div>'
++ '<div class="scorebar"><div class="base" style="width:'+sc.priorScore+'%"></div><div class="gain" data-w="'+Math.min(gainSum, 100-sc.priorScore)+'" style="width:0%"></div></div>'
++ '<div class="scoreline"><span>总分 <span class="big" style="color:'+col+'">'+sc.score+'</span> / 100</span>'
++ '<span>相对可能性 <b class="num">'+conf+'%</b>（在所有嫌疑里占的份额）</span>'
++ '<span>起步分 '+sc.priorScore+'（这类缺陷里它历史上的占比）</span></div>'
++ '<ul class="evlist">';
+html += '<li><span class="pts z">起步 '+sc.priorScore+'</span>还没看这次的证据，光凭历史经验：'+PHENOS[r.ph[0]].short+'里，这个原因历史上占约 '+Math.round(r.prior*100)+'%。</li>';
+sc.details.forEach(function(d){
+if(d.type==="sup") html += '<li><span class="pts p">+'+d.pts+' 分</span>'+esc(d.why)+'。</li>';
+else if(d.type==="cup") html += '<li><span class="pts p">+'+d.pts+' 分 · 杯泡分流</span>'+esc(d.why)+'。</li>';
+else if(d.type==="exc") html += '<li><span class="pts m">−25 分</span>'+esc(d.why)+'。</li>';
+else if(d.type==="zero") html += '<li><span class="pts m">归零</span>'+esc(d.why)+'——这是一票否决的强排除证据，这个嫌疑直接出局。</li>';
+else if(d.type==="nodata") html += '<li class="nodata">○ 暂无数据：「'+esc(FACT_LABEL[d.fact])+'」还没查——如果查了对得上，它还能再加分，所以系统会把它放进待核查清单。</li>';
+});
+html += '</ul></div>';
+});
+$("hypoList").innerHTML = html;
+setTimeout(function(){
+document.querySelectorAll("#hypoList .gain").forEach(function(el){ el.style.width = el.getAttribute("data-w")+"%";});
+}, 60);
+}
+
+/* ---------- 结论渲染 ---------- */
+function renderResult(scored, checks){
+var top = scored.filter(function(s){ return s.score>0;});
+var excluded = scored.filter(function(s){ return s.zeroed || (s.score===0 && s.details.some(function(d){return d.type==="exc"||d.type==="zero";}));});
+var sumPos = top.reduce(function(a,s){ return a+s.score;}, 0);
+var cHtml = "";
+if(top.length){
+var t1 = top[0];
+var sups = t1.details.filter(function(d){ return d.type==="sup";}).slice(0,3);
+cHtml += '本次最可能的原因是 <span class="win">'+esc(t1.rule.hyp)+'（'+t1.rule.id+'）</span>，得分 <b class="num">'+t1.score+'</b> 分';
+if(sumPos>0) cHtml += '，在全部嫌疑里占约 <b class="num">'+Math.round(t1.score/sumPos*100)+'%</b> 的可能性';
+cHtml += '。';
+if(sups.length){
+cHtml += '定下它主要靠这 '+sups.length+' 条证据：';
+cHtml += sups.map(function(d,i){ return '第'+(i+1)+'，'+esc(d.why);}).join('；')+'。';
+} else {
+cHtml += '不过要提醒：这次它排第一主要靠历史占比，现场支持证据还不多，建议先按下面的核查清单补证据再定案。';
+}
+if(top[1]) cHtml += '排第二的是「'+esc(top[1].rule.cause)+'」（'+top[1].score+' 分），和第一名还差 '+(t1.score-top[1].score)+' 分。';
+if(excluded.length){
+cHtml += '同时排除了 '+excluded.map(function(s){
+var ex = s.details.filter(function(d){return d.type==="exc"||d.type==="zero";})[0];
+return '「'+esc(s.rule.cause)+'」——'+(ex? esc(ex.why):"证据不支持");
+}).join('；')+'。';
+}
+if(cupState==="bad") cHtml += '另外，杯泡试验异常：问题大概率出在出枪之前（料、配比、混合、料温），相关嫌疑已加权 +10 分。';
+if(cupState==="ok") cHtml += '另外，杯泡试验正常：料与混合这一段基本排除，优先查模具、排气与注料，相关嫌疑已加权 +10 分。';
+if(cupState==="none") cHtml += '另外，本次还没做杯泡分流试验，建议先补这一步再定案。';
+if(checks.length) cHtml += '下一步建议先做：<b>'+esc(checks[0].a)+'</b>（成本'+checks[0].cost+'、最能确认或推翻第一名），确认后再执行标准处置：'+esc(t1.rule.fix)+'。';
+} else {
+cHtml = '这次所有嫌疑都被证据排除或得分归零，说明现有信息还不足以定案——常见原因是关键证据还没查（比如还没剖切、还没查保养和称重记录）。请按下面的核查清单逐项补证据后重新推理。';
+}
+$("conclusionText").innerHTML = cHtml;
+renderVoidType();
+/* Top3 卡片 */
+var tHtml = "";
+top.slice(0,3).forEach(function(sc, i){
+var conf = sumPos>0? Math.round(sc.score/sumPos*100): 0;
+var supL = sc.details.filter(function(d){return d.type==="sup";}).map(function(d){ return '<li>+'+d.pts+' 分 · '+esc(d.why)+'</li>';}).join("");
+var excL = sc.details.filter(function(d){return d.type==="exc"||d.type==="zero";}).map(function(d){ return '<li>'+(d.type==="zero"?"归零":"−25 分")+' · '+esc(d.why)+'</li>';}).join("");
+tHtml += '<div class="tcard'+(i===0?" first":"")+'"><span class="medal">第 '+(i+1)+' 名 · '+sc.rule.id+' · '+sc.rule.cat+'类</span>'
++ '<h3>'+esc(sc.rule.hyp)+'</h3>'
++ '<div><span class="conf" style="color:'+scoreColor(sc.score,false)+'">'+conf+'%</span> <span class="confl">相对可能性（得分 '+sc.score+' 分）</span></div>'
++ (supL? '<ul>'+supL+'</ul>': '<p style="font-size:13.5px;color:var(--muted)">暂无命中的支持证据，主要靠历史占比排在这里。</p>')
++ (excL? '<div style="font-size:13px;color:#ff9d8f">反对证据：</div><ul>'+excL+'</ul>': '')
++ '<div class="fix"><b>确认后标准处置：</b>'+esc(sc.rule.fix)+'</div>'
++ (BASIS[sc.rule.id]? '<div class="basis"><b>行业依据：</b>'+esc(BASIS[sc.rule.id].t)+' <span class="src">（出处：'+esc(BASIS[sc.rule.id].s)+'）</span></div>': '')
++ '</div>';
+});
+$("top3").innerHTML = tHtml || '<p class="empty-note">没有得分大于 0 的嫌疑，请补充证据后重试。</p>';
+/* 核查清单 */
+$("checkList").innerHTML = checks.map(function(ck){
+return '<li><span class="ckn"></span><div><span class="cka">'+esc(ck.a)+'</span> '
++ '<span class="pill cost">成本 '+ck.cost+'</span> <span class="pill gain">区分度 '+ck.gain+'</span>'
++ '<div class="ckw">'+(ck.note? esc(ck.note): ('用来确认或推翻嫌疑「'+esc(ck.forRule.cause)+'」（'+ck.forRule.id+'）——查完把结果填回证据区，可以再跑一次推理看排名变化。'))+'</div></div></li>';
+}).join("") || '<li><span class="ckw" style="padding:6px 0">暂无推荐：前三名嫌疑的核查动作都依赖已有证据，或已被排除。</span></li>';
+$("resultCard").style.display = "block";
+}
+
+/* ---------- 主流程 ---------- */
+var running = false;
+$("btnRun").addEventListener("click", async function(){
+if(running) return; running = true;
+$("btnRun").disabled = true;
+$("resultCard").style.display = "none";
+$("explainBox").classList.remove("on");
+[1,2,3,4,5,6].forEach(function(n){ setStep(n, null, "");});
+$("logBox").innerHTML = "";
+var pheno = $("selPheno").value;
+var P = PHENOS[pheno];
+
+/* STEP 1 表型识别 */
+setStep(1, "active");
+log('<span class="key"></span>先把缺陷的长相定准，这是整个推理的起点。');
+await wait(650);
+var regionTxt = $("selRegion").selectedIndex>0? $("selRegion").options[$("selRegion").selectedIndex].text: "区域未注明";
+log('识别结果：表型 = <b>'+pheno+" · "+P.name+'</b>；'+esc(regionTxt)+'。模型里对它的定义是：'+P.desc+'。');
+setStep(1, "done", "已定型："+pheno+" "+P.short);
+await wait(350);
+
+/* STEP 2 杯泡分流 */
+setStep(2, "active");
+log('<span class="key"></span>分型之后先做分流：打一杯泡，看问题出在出枪之前还是模具这一侧——这一步最便宜，却能先把嫌疑名单砍掉一半。');
+await wait(600);
+if(cupState==="bad"){
+log('杯泡结果：<span class="neg">异常</span>——同一台机器、同一批料打出来的杯泡都不正常，问题在料液出枪之前。接下来优先看料、配比、混合、料温，这些嫌疑评分时 <b>+10 分</b>（理由逐条写进评分明细）。');
+setStep(2, "done", "杯泡异常 → 先查出枪之前");
+} else if(cupState==="ok"){
+log('杯泡结果：<span class="pos">正常</span>——料、配比、混合这一段被杯泡证明没问题。接下来优先查模具、排气、注料这一侧，这些嫌疑评分时 <b>+10 分</b>（理由逐条写进评分明细）。');
+setStep(2, "done", "杯泡正常 → 先查模具/排气/注料");
+} else {
+log('这次<span class="key">还没做杯泡试验</span>：先不分流、不加权；推理完成后，它会被排进「下一步先查什么」的第一位。');
+setStep(2, "done", "未做杯泡 → 列为第一优先核查");
+}
+await wait(350);
+
+/* STEP 3 假设生成 */
+setStep(3, "active");
+log('<span class="key"></span>顺着本体里「什么原因能导致这种缺陷」的因果关系，把嫌疑名单先列全——漏掉一个，后面再准也找不回来。');
+var cands = buildCandidates(pheno);
+await wait(600);
+var exactN = cands.filter(function(c){return!c.near;}).length;
+log('共列出 <b>'+cands.length+'</b> 个嫌疑：'+exactN+' 个是这类表型的直配原因；其余来自邻近表型（长相接近的缺陷），起步分打六折再参与排名，避免漏检。');
+log('嫌疑名单：'+cands.map(function(c){ return c.rule.id+" "+c.rule.cause;}).join("、")+'。');
+setStep(3, "done", "已生成 "+cands.length+" 个嫌疑");
+drawGraph(cands.map(function(c){ return {rule:c.rule, near:c.near, priorScore:Math.round(c.rule.prior*100*c.mult), score:0, zeroed:false, pending:true, details:[]};}));
+await wait(350);
+
+/* STEP 4 证据取证 */
+setStep(4, "active");
+var hits = FACTS.filter(function(f){return factState[f.id]==="hit";});
+var misses = FACTS.filter(function(f){return factState[f.id]==="miss";});
+log('<span class="key"></span>把现场证据逐条拿去对照每个嫌疑：命中=确实观察到了；未命中=专门查过、确认没有（这类「排除证据」往往比支持证据更值钱）；无数据=还没查，先记为缺口。');
+await wait(600);
+log('本次共确认 <b>'+(hits.length+misses.length)+'</b> 条证据：<span class="pos">命中 '+hits.length+' 条</span>、<span class="neg">未命中 '+misses.length+' 条</span>、无数据 '+(FACTS.length-hits.length-misses.length)+' 条。');
+hits.slice(0,6).forEach(function(f){ log('· 命中证据：「'+f.label+'」');});
+setStep(4, "done", "已取证 "+(hits.length+misses.length)+" 条");
+await wait(350);
+
+/* STEP 5 评分排序 */
+setStep(5, "active");
+log('<span class="key"></span>开始算分：起步分 = 这个原因在该表型里的历史占比 × 100；每命中一条支持证据 +10~20 分；每命中一条排除证据 −25 分；碰到一票否决的强排除，直接归零。');
+var scored = cands.map(scoreCandidate);
+scored.sort(function(a,b){ return b.score - a.score;});
+lastScored = scored;
+await wait(700);
+scored.slice(0,5).forEach(function(sc, i){
+var sups = sc.details.filter(function(d){return d.type==="sup";});
+var exs = sc.details.filter(function(d){return d.type==="exc"||d.type==="zero";});
+var line = '嫌疑 #'+(i+1)+' <b>'+sc.rule.id+" "+esc(sc.rule.cause)+'</b>：起步 '+sc.priorScore+' 分';
+if(sups.length) line += '，<span class="pos">支持证据 +'+sups.reduce(function(a,d){return a+d.pts;},0)+' 分</span>';
+if(exs.length) line += sc.zeroed? '，<span class="neg">命中强排除证据 → 归零出局</span>': '，<span class="neg">排除证据 −'+(exs.length*25)+' 分</span>';
+line += ' → 总分 <b>'+sc.score+'</b> 分。';
+log(line);
+});
+if(scored.length>5) log('其余 '+(scored.length-5)+' 个嫌疑得分更低，明细在下方「评分明细」里逐条列出。');
+setStep(5, "done", scored[0] && scored[0].score>0? ("领先："+scored[0].rule.cause+" "+scored[0].score+" 分"): "暂无得分嫌疑");
+drawGraph(scored); animateEdges(scored); renderHypos(scored);
+await wait(500);
+
+/* STEP 6 核查推荐 */
+setStep(6, "active");
+log('<span class="key"></span>最后看前三名之间还差哪些没查的证据，专挑「成本低、又最能一锤定音」的检查排在前面。');
+var checks = buildChecks(scored);
+await wait(600);
+if(checks.length) log('推荐先查：<b>'+esc(checks[0].a)+'</b>（成本'+checks[0].cost+'）。查完把结果填回证据区再跑一次，排名会自己更新——这就是「越用越准」的闭环。');
+else log('前三名暂无可推荐的低成本核查动作，或都已被排除。');
+setStep(6, "done", checks.length? ("首选核查："+checks[0].a): "无推荐动作");
+renderResult(scored, checks);
+log('<span class="key">推理完成。</span>结论和处置建议在页面下方；点因果图里任意原因节点，可以看它的大白话解释。');
+$("resultCard").scrollIntoView({behavior: REDUCED?"auto":"smooth", block:"start"});
+$("btnRun").disabled = false; running = false;
+});
+
+/* ---------- 行业知识组件：体系参数卡 / 工艺窗口 / 杯泡 / 分型 ---------- */
+function renderSysCard(){
+var s = SYSTEMS[$("selSystem").value]; if(!s) return;
+var html = '<div class="sysgrid">';
+s.cells.forEach(function(c){ html += '<div class="syscell"><div class="k">'+esc(c[0])+'</div><div class="v">'+esc(c[1])+(c[2]?' <small>'+esc(c[2])+'</small>':'')+'</div></div>';});
+html += '</div><p class="srcnote">数据性质：'+esc(s.nature)+' · 出处：'+esc(s.src)+'<br/>'+esc(s.note)+'</p>';
+$("sysCard").innerHTML = html;
+}
+function renderWindows(){
+var html = "";
+WINDOWS.forEach(function(w){
+html += '<div class="winrow"><span class="wl">'+esc(w.label)+'</span><span class="wr">'+w.lo+'–'+w.hi+(w.unit?' '+esc(w.unit):'')+'</span>'
++ (w.input? '<input type="number" step="any" id="win-'+w.id+'" placeholder="实测值" aria-label="'+esc(w.label)+'实测值" /><span class="wstat" id="wstat-'+w.id+'">未填实测</span>'
+: '<span class="wstat">仅速查</span>')
++ '<span class="wwhy" id="wwhy-'+w.id+'">'+(w.input? '': esc(w.low+(w.high?' '+w.high:'')))+'</span></div>';
+});
+$("winList").innerHTML = html;
+WINDOWS.forEach(function(w){ if(w.input) $("win-"+w.id).addEventListener("input", function(){ checkWin(w); }); });
+}
+function checkWin(w){
+var inp = $("win-"+w.id), st = $("wstat-"+w.id), why = $("wwhy-"+w.id);
+if(!inp || !st || !why) return;
+var v = parseFloat(inp.value);
+if(isNaN(v)){ st.textContent = "未填实测"; st.className = "wstat"; why.textContent = ""; return; }
+if(v < w.lo){ st.textContent = "偏低 ↓"; st.className = "wstat out"; why.textContent = w.low; }
+else if(v > w.hi){ st.textContent = "偏高 ↑"; st.className = "wstat out"; why.textContent = w.high; }
+else { st.textContent = "在窗口内"; st.className = "wstat in"; why.textContent = "落在通用参考窗口内（仍以本厂规程为准）。"; }
+}
+function renderCupSeg(){
+var seg = $("cupSeg"); if(!seg) return;
+var btns = seg.querySelectorAll("button");
+for(var j=0;j<btns.length;j++) btns[j].classList.toggle("on", btns[j].getAttribute("data-s")===cupState);
+}
+(function(){
+var seg = $("cupSeg"); if(!seg) return;
+var btns = seg.querySelectorAll("button");
+for(var i=0;i<btns.length;i++){
+btns[i].addEventListener("click", function(){
+cupState = this.getAttribute("data-s");
+renderCupSeg();
+});
+}
+})();
+/* 空洞分型判定：规则映射（表型为主入口，证据细分弥散型；判不准就明说） */
+function classifyVoid(){
+var pheno = $("selPheno").value;
+function hits(ids){ return ids.filter(function(id){ return factState[id]==="hit"; }).map(function(id){ return FACT_LABEL[id]; }); }
+if(pheno==="V-GAS") return {k:"3A", basis:["所选表型为 V-GAS 困气型"].concat(hits(["f_highest","f_smooth","f_samecav","f_ventoverdue"]))};
+if(pheno==="V-FILL"||pheno==="L") return {k:"3B", basis:["所选表型为 "+pheno+" · "+PHENOS[pheno].name].concat(hits(["f_weightlow","f_farend","f_meterdrift","f_overflow"]))};
+if(pheno==="V-MIX") return {k:"3C", basis:["所选表型为 V-MIX 混合不良型"].concat(hits(["f_stripe","f_presslow"])).concat(cupState==="bad"? ["杯泡试验异常——与 3C「杯泡同样异常」的指纹吻合"]:[])};
+if(pheno==="V-CELL") return {k:"3D", basis:["所选表型为 V-CELL 泡孔型"].concat(hits(["f_coarse","f_batchtime","f_sameline"]))};
+if(pheno==="V-SHRINK") return {k:"3E", basis:["所选表型为 V-SHRINK 收缩型"].concat(hits(["f_tear","f_curecut"]))};
+if(pheno==="V-DISP"){
+if(factState["f_stripe"]==="hit"||cupState==="bad") return {k:"3C", basis:["弥散型表型 + "+(factState["f_stripe"]==="hit"? "剖切条纹证据": "杯泡异常证据")+"，按分流规则细分到混合不良型"]};
+if(factState["f_coarse"]==="hit") return {k:"3D", basis:["弥散型表型 + 泡孔粗大并泡证据，细分到水分/污染并泡型"]};
+var tempHits = hits(["f_moldlow","f_mattemp"]);
+if(tempHits.length) return {k:null, note:"弥散分布在报告五分型里没有独立一类。本次已有温度侧证据（"+tempHits.join("、")+"），方向更接近报告 §2 的温度-凝胶机理（模温/料温问题），但它不属于 §3 五分型中的任何一类，故不强行套号；仍建议补做杯泡，排除混合不良（3C）。"};
+return {k:null, note:"弥散分布在报告五分型里没有独立一类：它可能是混合不良（3C）、模温/料温问题或配比/批次问题的共同外观，必须靠杯泡分流与温度证据细分。当前证据不足以定型——先做杯泡、核模温与料温再判定。"};
+}
+if(pheno==="V-INTF") return {k:null, note:"界面型空鼓不在报告五分型内（五分型针对泡层内部空洞），本 Demo 按本体 V-INTF 继续推理；只有当缺陷表现为泡沫表面的针孔/鼓泡时，才归入 3F 表面针孔/鼓泡。"};
+return {k:null, note:"本次表型「"+PHENOS[pheno].name+"」不是空洞类缺陷，报告的空洞五分型不适用；上方嫌疑排序与处置建议照常成立。"};
+}
+function renderVoidType(){
+var r = classifyVoid();
+var box = $("voidType"); if(!box) return;
+if(r.k){
+var t = VOID_TYPES[r.k];
+box.innerHTML = '<div class="voidbox"><h3>空洞分型判定：<span class="vcode">'+r.k+' '+esc(t.name)+'</span> <span style="font-size:13px;color:var(--muted)">（报告 §3 分型 ↔ 本体表型 '+esc(t.code)+'）</span></h3>'
++ '<p style="margin:6px 0;font-size:14px;color:#cfdae5"><b>形态指纹：</b>'+esc(t.fp)+'</p>'
++ '<p style="margin:4px 0;font-size:13.5px;color:var(--muted)"><b>本次判定依据：</b>'+r.basis.map(function(x){ return esc(x); }).join("；")+'。</p></div>';
+} else {
+box.innerHTML = '<div class="voidbox"><h3>空洞分型判定：<span class="vcode">不套用五分型</span></h3><p style="margin:6px 0;font-size:14px;color:#cfdae5">'+esc(r.note)+'</p></div>';
+}
+}
+
+/* ---------- 初始渲染 ---------- */
+(function(){
+var sysSel = $("selSystem"), sHtml = "";
+Object.keys(SYSTEMS).forEach(function(k){ sHtml += '<option value="'+k+'">'+esc(SYSTEMS[k].name)+'</option>'; });
+sysSel.innerHTML = sHtml; sysSel.value = "SPC";
+sysSel.addEventListener("change", renderSysCard);
+renderSysCard();
+renderWindows();
+})();
+renderFacts();
+drawGraph([]);
+</script>
+</body>
+</html>
