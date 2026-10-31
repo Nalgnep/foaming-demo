@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>页面不存在 · 发泡缺陷根因推理 Demo</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0c1015;color:#e9eef4;font-family:"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif}
+main{max-width:36rem;padding:24px}
+a{color:#2fc4ae}
+</style>
+</head>
+<body>
+<main>
+<h1>这个地址没有页面</h1>
+<p>发泡缺陷根因推理 Demo 的入口是仓库根目录的 <a id="home" href="index.html">index.html</a>。</p>
+</main>
+<script>
+(function(){
+  var host = location.hostname || "";
+  var path = location.pathname || "/";
+  if(location.protocol === "file:" || host === "localhost" || host === "127.0.0.1") return;
+  if(/\.github\.io$/.test(host)){
+    var seg = path.split("/").filter(Boolean)[0];
+    if(seg && seg !== "index.html") document.getElementById("home").setAttribute("href", "/"+seg+"/");
+  }
+})();
+</script>
+</body>
+</html>
