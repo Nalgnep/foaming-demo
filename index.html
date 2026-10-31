@@ -4,27 +4,28 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0c1015" />
+<meta name="description" content="冰箱箱体聚氨酯发泡空洞缺陷根因推理演示。表型识别、杯泡分流、证据加权、定案置信与核查推荐。知识包 v1.1，种子规则不自动判责。" />
 <link rel="icon" href="data:," />
 <title>发泡缺陷根因推理 Demo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
 <style>
 :root{
   --bg:#0c1015; --bg2:#10151d; --panel:#151b24; --panel2:#1a212d; --line:#26303f;
-  --ink:#e9eef4; --muted:#9fb0c0; --faint:#6d7f92;
+  --ink:#e9eef4; --muted:#9fb0c0; --faint:#93a6ba;
   --amber:#f2a63b; --amber-d:#3a2a12;
   --teal:#2fc4ae; --teal-d:#0f2f2b;
   --red:#e5604f; --red-d:#3a1a14;
   --green:#4cc26e; --green-d:#12291a;
   --steel:#7fa6c9;
-  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","Cascadia Mono","Sarasa Mono SC","Noto Sans Mono",Menlo,Consolas,monospace;
+  --sans:"PingFang SC","Hiragino Sans GB","Noto Sans SC","Source Han Sans SC","Microsoft YaHei","微软雅黑",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;
   background-image:radial-gradient(1100px 480px at 85% -80px,rgba(47,196,174,.07),transparent 60%),radial-gradient(900px 420px at -10% 120px,rgba(242,166,59,.05),transparent 55%);}
 .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 70px}
+section,.intro{scroll-margin-top:72px}
 h1,h2,h3{margin:0;line-height:1.3}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
@@ -269,20 +270,88 @@ table.boardtable td:first-child{width:44%}
 .pendlist{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted);line-height:1.8}
 .pendlist b{color:var(--ink)}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ---------- 工作台导航 / 可访问性 / 报告 ---------- */
+.skip{position:absolute;left:-999px;top:0}
+.skip:focus{left:12px;top:8px;z-index:80;background:var(--amber);color:#191104;padding:8px 12px;border-radius:8px;font-weight:800}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  background:rgba(12,16,21,.94);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:14px}
+.brand{font-weight:900;font-size:14px;letter-spacing:.3px}
+.brand span{color:var(--faint);font-weight:500;margin-left:6px}
+.topbar nav{display:flex;gap:4px;flex-wrap:wrap}
+.topbar a{color:var(--muted);text-decoration:none;font-size:13px;padding:5px 8px;border-radius:6px}
+.topbar a:hover,.topbar a:focus-visible{color:var(--ink);background:var(--panel2)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.seg button{min-height:32px}
+.morphs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.morph{text-align:left;border:1px solid var(--line);background:var(--bg2);color:var(--ink);border-radius:8px;padding:8px 10px;cursor:pointer;font-family:var(--sans);font-size:13.5px;line-height:1.45}
+.morph small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.morph:hover,.morph:focus-visible{border-color:var(--amber)}
+.confbox{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;background:var(--bg2)}
+.confband{display:inline-block;font-weight:800;border-radius:999px;padding:2px 10px;font-size:13px;margin-bottom:6px}
+.confband.high{background:var(--green-d);color:var(--green);border:1px solid #1e4630}
+.confband.mid{background:#241a09;color:var(--amber);border:1px solid var(--amber-d)}
+.confband.low{background:var(--red-d);color:#ffb3a8;border:1px solid #7a352b}
+.confband.none{background:#39465a;color:var(--ink);border:1px solid var(--line)}
+.method{font-size:13px;color:var(--muted);margin:8px 0 0;line-height:1.7}
+.sens{margin-top:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg2);padding:10px 12px}
+.sens b,.ctx b,.pendbox b{color:var(--ink)}
+.sens ul{margin:6px 0 0;padding-left:18px}
+.sens li{font-size:13.5px;color:#cfdae5;margin:4px 0}
+.ctx{margin-top:12px;border:1px dashed #334154;border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--muted);line-height:1.7}
+.ctx a{color:var(--teal)}
+.pendbox{margin-top:8px}
+.pendbox ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13.5px}
+.graph-list{display:none}
+.glist{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:6px;font-family:var(--sans);cursor:pointer;font-size:14px}
+.glist b{font-family:var(--mono);flex:none}
+.mutex-note{font-size:13px;color:#ffd9a0;min-height:1.2em;margin:8px 0 0}
+.foot{margin-top:22px;color:var(--faint);font-size:12.5px;line-height:1.7}
+.chkfast{font-size:13.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+@media(max-width:760px){
+  .topbar{position:static}
+  .graphwrap{display:none}
+  .graph-list{display:block}
+  .morphs{grid-template-columns:1fr 1fr}
+  .seg button{min-height:40px;padding:8px 12px}
+  h1,.intro h1{font-size:22px}
+}
+@media print{
+  body{background:#fff;color:#111}
+  .topbar,.skip,.btn,.presets,.drop,.scanline{display:none!important}
+  body.print-report .intro,body.print-report .topbar,body.print-report section:not(#resultCard){display:none!important}
+  body.print-report #resultCard{display:block!important}
+  .card,.intro,.confbox,.tcard,.hypo{background:#fff;color:#111;border-color:#ccc}
+  a{color:#0b5c52}
+}
 </style>
 </head>
 <body>
+<a class="skip" href="#workbench">跳到推理工作台</a>
 <div class="wrap">
+  <header class="topbar">
+    <div class="brand">发泡根因推理<span>知识包 v1.1 · 种子规则</span></div>
+    <nav aria-label="页内导航">
+      <a href="#workbench">工作台</a>
+      <a href="#knowledge">工艺窗口</a>
+      <a href="#evidenceCard">证据</a>
+      <a href="#graphCard">因果图</a>
+      <a href="#supplementCard">知识包</a>
+      <a href="#anchorCard">国标</a>
+      <a href="#hisenseCard">海信看板</a>
+    </nav>
+  </header>
 
   <!-- ===================== 导览 ===================== -->
-  <div class="intro">
+  <div class="intro" id="workbench">
     <h1>冰箱箱体发泡 · 缺陷<span class="accent">根因推理</span>演示</h1>
     <p class="lede">把缺陷的样子告诉系统，它会像老师傅一样：先看长相列出嫌疑名单，再逐条对照现场证据打分，最后告诉你最可能的原因和先查什么。</p>
     <div class="guide">
       <p><b>怎么看这个页面（业务导览）：</b></p>
       <p>① 先在下面把缺陷描述清楚（选表型 / 写描述 / 传照片，三种方式任选），证据知道多少填多少，不知道就留「无数据」；</p>
       <p>② 点「开始推理」后，看中间的<b>推理链路</b>一步步往前走，日志会把每一步的判断讲出来；</p>
-      <p>③ 再看<b>因果图</b>谁在领先、<b>评分明细</b>每分是怎么来的；最后看结论解读和「下一步先查什么」。</p>
+      <p>③ 再看<b>因果图</b>谁在领先、<b>评分明细</b>每分是怎么来的；最后看结论解读、<b>定案置信</b>（和得分份额不是一回事）以及「下一步先查什么」。</p>
     </div>
     <div class="stats">
       <span class="stat"><b>75</b>本体类</span>
@@ -299,12 +368,12 @@ table.boardtable td:first-child{width:44%}
   <section class="card" id="inputCard">
     <div class="sec-head"><span class="step-badge">输入</span><h2>第一步：把缺陷描述清楚</h2><span class="sub">三种方式任选其一，最后都会变成统一的「表型 + 证据」，推理引擎只认这一套输入。</span></div>
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-tab="form">① 结构化表型</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="text">② 文字描述</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="img">③ 缺陷图片</button>
+      <button class="tab" role="tab" id="tab-form" aria-selected="true" aria-controls="pane-form" data-tab="form">① 结构化表型</button>
+      <button class="tab" role="tab" id="tab-text" aria-selected="false" aria-controls="pane-text" data-tab="text">② 文字描述</button>
+      <button class="tab" role="tab" id="tab-img" aria-selected="false" aria-controls="pane-img" data-tab="img">③ 缺陷图片</button>
     </div>
 
-    <div class="tabpane on" id="pane-form">
+    <div class="tabpane on" id="pane-form" role="tabpanel" aria-labelledby="tab-form">
       <div class="grid2">
         <div>
           <label class="flabel" for="selPheno">缺陷表型（<span class="term" tabindex="0" data-tip="「表型」就是缺陷看得见的样子：长在哪、什么形状、怎么分布。同是空洞，表型不同，原因完全不同——这是推理的起点。">什么是表型？</span>）</label>
@@ -342,10 +411,10 @@ table.boardtable td:first-child{width:44%}
           </select>
         </div>
       </div>
-      <p class="hint">提示：区域、分布、内壁这三项选了以后，会自动同步到下面的证据区（标有「表型带入」），不用重复填。</p>
+      <p class="hint">提示：区域、分布、内壁会同步到证据区（标「表型带入」）。改选项时只清掉上次自动带入的项，手动点过的证据会留下。</p>
     </div>
 
-    <div class="tabpane" id="pane-text">
+    <div class="tabpane" id="pane-text" role="tabpanel" aria-labelledby="tab-text">
       <label class="flabel" for="txtDesc">用大白话描述缺陷（检验记录、班组交接里的话就行）</label>
       <textarea id="txtDesc" placeholder="例如：剖切发现箱体顶部有个大空洞，内壁光滑，同一个模腔连着三台都在同一位置，排气孔保养已经逾期了。"></textarea>
       <div style="margin-top:10px"><button class="btn teal" id="btnParse">解析这段描述</button></div>
@@ -355,7 +424,16 @@ table.boardtable td:first-child{width:44%}
       </div>
     </div>
 
-    <div class="tabpane" id="pane-img">
+    <div class="tabpane" id="pane-img" role="tabpanel" aria-labelledby="tab-img">
+      <p class="hint" style="margin-top:0">剖切形态请直接点选。上传照片只在本机预览；本页不把任意照片都判成同一种空洞。</p>
+      <div class="morphs" id="morphs">
+        <button type="button" class="morph" data-ph="V-GAS" data-region="high" data-dist="single" data-wall="smooth">困气型<small>顶部 / 高点 · 光滑孤立大孔</small></button>
+        <button type="button" class="morph" data-ph="V-FILL" data-region="far" data-dist="single" data-wall="">充填不足<small>远离注料口 · 大面积空缺</small></button>
+        <button type="button" class="morph" data-ph="V-DISP" data-region="mid" data-dist="disp" data-wall="">弥散空洞<small>泡层中部 · 多处中小孔</small></button>
+        <button type="button" class="morph" data-ph="V-MIX" data-region="mid" data-dist="stripe" data-wall="">混合不良<small>条纹 / 云雾状未混料痕</small></button>
+        <button type="button" class="morph" data-ph="V-CELL" data-region="mid" data-dist="disp" data-wall="coarse">并泡粗孔<small>泡孔粗大、孔壁连通</small></button>
+        <button type="button" class="morph" data-ph="V-SHRINK" data-region="" data-dist="single" data-wall="tear">收缩撕裂<small>内壁不规则撕裂</small></button>
+      </div>
       <div class="upwrap">
         <div class="drop" id="dropBox">
           <div id="dropHint">点击选择剖切 / 缺陷照片<br /><span style="font-size:12.5px">（照片只在本机预览，不上传）</span></div>
@@ -364,7 +442,7 @@ table.boardtable td:first-child{width:44%}
         </div>
         <div>
           <input type="file" id="fileInp" accept="image/*" />
-          <span class="sim-note">Demo 说明：本页面的图像识别是模拟的，实际项目需接入视觉模型训练后才能自动分型。</span>
+          <span class="sim-note">照片只留在本机。这里没有视觉模型，不会把每张图都判成同一种空洞。请点上面的剖切形态；需要走旧演示时，用上传后的「演示脚本」。</span>
           <div id="imgResult" style="margin-top:12px"></div>
         </div>
       </div>
@@ -379,7 +457,7 @@ table.boardtable td:first-child{width:44%}
   </section>
 
   <!-- ===================== 行业知识 ===================== -->
-  <section class="card">
+  <section class="card" id="knowledge">
     <div class="sec-head"><span class="step-badge">知识</span><h2>体系参数卡与工艺窗口速查</h2><span class="sub">来自行业知识收集报告（厂商资料 / 专利 / 标准公开来源）。核心纪律：<b>反应性阈值必须绑体系</b>——同一个「凝胶时间」，换个体系，正常范围完全不同。</span></div>
     <div class="grid2">
       <div>
@@ -392,25 +470,29 @@ table.boardtable td:first-child{width:44%}
       <div>
         <h3 class="subh">工艺窗口速查（多来源交叉的通用范围）</h3>
         <div id="winList"></div>
-        <p class="srcnote"><b>参考窗口，非判废线：</b>以上是多来源交叉一致的通用范围，正式判定以本厂体系参数卡与工艺规程为准。填入实测值，可即时看偏离方向与通俗后果。</p>
+        <p class="srcnote"><b>参考窗口，非判废线：</b>以上是多来源交叉一致的通用范围，正式判定以本厂体系参数卡与工艺规程为准。填入实测值可看偏离方向；料温、模温、混合压力还能一键写入证据，分数要等再次点「开始推理」才变。</p>
       </div>
     </div>
   </section>
 
   <!-- ===================== 证据 ===================== -->
-  <section class="card">
+  <section class="card" id="evidenceCard">
     <div class="sec-head"><span class="step-badge">证据</span><h2>第二步：现场证据确认</h2><span class="sub">每条证据三种状态：<b style="color:var(--green)">命中</b>=确实观察到；<b style="color:#ff9d8f">未命中</b>=查过了、没有；<b>无数据</b>=还没查。查过没有和没查过，对推理的意义完全不同——这正是老师傅说的「排除证据」。</span></div>
     <div class="cuprow">
       <div style="flex:1;min-width:240px"><b>杯泡分流试验</b><div class="hint" style="margin-top:2px">排查第一刀：剖切分型后先打一杯泡。<b style="color:#ff9d8f">杯泡也异常</b> → 问题在出枪之前（料 / 配比 / 混合 / 料温）；<b style="color:var(--green)">杯泡正常</b> → 去查模具 / 排气 / 注料。选定后，推理会给对应一侧的嫌疑 +10 分，并在评分明细里写明理由。</div></div>
       <span class="seg" id="cupSeg" role="group" aria-label="杯泡试验结果">
-        <button data-s="none" class="on">未做</button><button data-s="ok">杯泡正常</button><button data-s="bad">杯泡异常</button>
+        <button type="button" data-s="none" class="on">未做</button><button type="button" data-s="ok">杯泡正常</button><button type="button" data-s="bad">杯泡异常</button>
       </span>
+      <p class="hint" id="cupSysHint" style="flex-basis:100%;margin:0"></p>
     </div>
     <div class="fact-groups" id="factGroups"></div>
+    <p class="mutex-note" id="mutexNote"></p>
+    <p class="hint" id="evidenceSummary"></p>
     <div class="runrow">
-      <button class="btn primary" id="btnRun" style="font-size:16.5px;padding:12px 34px">开始推理 →</button>
-      <button class="btn" id="btnReset">清空重填</button>
-      <span class="tip">推理全程在本页面内完成，规则与打分逻辑就是模型文档第 6、7 节的那套种子规则。</span>
+      <button type="button" class="btn primary" id="btnRun" style="font-size:16.5px;padding:12px 34px">开始推理 →</button>
+      <button type="button" class="btn" id="btnReset">清空重填</button>
+      <label class="chkfast"><input type="checkbox" id="chkFast" /> 跳过逐步动画（复核时用）</label>
+      <span class="tip">推理全程在本页面内完成。排序仍用模型第 6、7 节种子分；得分份额不是后验概率。</span>
     </div>
   </section>
 
@@ -429,9 +511,10 @@ table.boardtable td:first-child{width:44%}
   </section>
 
   <!-- ===================== 因果图 ===================== -->
-  <section class="card">
+  <section class="card" id="graphCard">
     <div class="sec-head"><span class="step-badge">图谱</span><h2>因果图：缺陷 ← 嫌疑原因</h2><span class="sub">左边是这次缺陷，右边是嫌疑名单。连线越亮、节点越绿，嫌疑越大；变灰的是被证据排除掉的。<b>点击任意原因节点</b>，看它的大白话解释。</span></div>
     <div class="graphwrap"><svg id="graph" width="100%" role="img" aria-label="因果关系图"></svg></div>
+    <div class="graph-list" id="graphList"></div>
     <div class="legend">
       <span><i style="background:var(--green)"></i>得分 ≥ 60 · 高度可疑</span>
       <span><i style="background:var(--amber)"></i>30–59 · 有嫌疑，需核查</span>
@@ -443,14 +526,22 @@ table.boardtable td:first-child{width:44%}
 
   <!-- ===================== 评分明细 ===================== -->
   <section class="card">
-    <div class="sec-head"><span class="step-badge">评分</span><h2>评分明细：每一分是怎么来的</h2><span class="sub">打分规则写死在明处：起步分 = 历史占比 × 100；每条支持证据 +10~20 分；每条排除证据 −25 分；碰上「一票否决」的强排除证据，直接归零。</span></div>
+    <div class="sec-head"><span class="step-badge">评分</span><h2>评分明细：每一分是怎么来的</h2><span class="sub">打分规则写死在明处：起步分 = 历史占比 × 100；每条支持证据 +10~20 分；每条排除证据 −25 分；碰上「一票否决」的强排除证据，直接归零。条形按最终得分画。旁边的百分比是得分份额，不是后验概率。</span></div>
     <div id="hypoList"><p class="empty-note">还没有推理结果。填好上面的表型和证据，点「开始推理」，这里会把每个嫌疑的加减分理由逐条列出来。</p></div>
   </section>
 
   <!-- ===================== 结论 ===================== -->
   <section class="card" id="resultCard" style="display:none">
     <div class="sec-head"><span class="step-badge">结论</span><h2>推理结论</h2></div>
-    <div class="conclusion"><h3>结论解读（老师傅口头汇报版）</h3><div id="conclusionText"></div></div>
+    <div id="confidenceBox"></div>
+    <div class="conclusion" aria-live="polite"><h3>结论解读（老师傅口头汇报版）</h3><div id="conclusionText"></div></div>
+    <div id="sensitivityBox"></div>
+    <div id="contextBox"></div>
+    <div class="runrow" id="reportActions" style="display:none">
+      <button type="button" class="btn teal" id="btnCopy">复制交接纪要</button>
+      <button type="button" class="btn" id="btnPrint">打印本页结论</button>
+      <span class="tip" id="copyTip"></span>
+    </div>
     <div id="voidType"></div>
     <details style="margin-top:10px">
       <summary style="cursor:pointer;font-size:13.5px;color:var(--muted)">展开看：空洞分型判定映射表（报告 §3 五分型 + 表面针孔，系统就是按这张表判的）</summary>
@@ -467,6 +558,7 @@ table.boardtable td:first-child{width:44%}
     <div class="top3" id="top3"></div>
     <h3 style="margin-top:22px;font-size:16.5px">下一步先查什么（按「最能分清嫌疑 × 成本最低」排序）</h3>
     <ol class="checks" id="checkList"></ol>
+    <div id="pendingBox"></div>
     <div class="disclaimer">演示说明：本页为根因推理 Demo，内置的是模型 v1.0 的 20 条种子规则，阈值与先验分均为行业常见量级的示例值，正式上线前必须用本厂工艺规程和 50–100 个历史闭环案例回测标定。系统给的是「带证据的嫌疑排序」，不是自动判责——最终根因以现场核查和专家确认为准，确认结果应回写案例库、反过来修正规则分数（这就是模型里说的闭环）。体系参数卡、工艺窗口与空洞分型来自 2026-10-23 行业知识收集报告，数值为绑体系的典型值或通用参考窗口，不是判废线；无可靠出处的项目见页末「知识空白」。</div>
   </section>
 
@@ -737,6 +829,7 @@ table.boardtable td:first-child{width:44%}
     </div>
   </section>
 
+  <footer class="foot">冰箱箱体聚氨酯发泡缺陷根因推理 Demo · 知识包 v1.1 · 页面内完成推理，照片与证据不离开这台浏览器。种子规则给出带证据的嫌疑排序，最终根因以现场核查和专家确认为准。</footer>
 </div>
 <script>
 /* ============================================================
@@ -1103,7 +1196,11 @@ function $(id){ return document.getElementById(id);}
 function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms);});}
 var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-function wait(ms){ return sleep(REDUCED? Math.min(ms,60): ms);}
+function wait(ms){
+var fast = ($("chkFast") && $("chkFast").checked) || /[?&]fast=1/.test(location.search);
+if(fast) return sleep(0);
+return sleep(REDUCED? Math.min(ms,60): ms);
+}
 
 /* ---------- 表型下拉 ---------- */
 (function(){
@@ -1115,7 +1212,13 @@ sel.innerHTML = html; sel.value = "V-GAS";
 })();
 
 /* ---------- 证据面板 ---------- */
-function renderFacts(){
+function updateEvidenceSummary(){
+var el = $("evidenceSummary"); if(!el) return;
+var h=0,m=0,n=0;
+FACTS.forEach(function(f){ if(factState[f.id]==="hit") h++; else if(factState[f.id]==="miss") m++; else n++; });
+el.textContent = "当前证据：命中 "+h+" 条 · 未命中 "+m+" 条 · 无数据 "+n+" 条。无数据不当成「没有」，也不扣排除分。";
+}
+function renderFacts(focus){
 var html = "";
 FACT_GROUPS.forEach(function(gname, gi){
 html += '<div class="fgroup">'+gname+'</div>';
@@ -1125,9 +1228,9 @@ var st = factState[f.id];
 html += '<div class="fact'+(factAuto[f.id]?" auto":"")+'" data-fact="'+f.id+'">'
 + '<span class="fname">'+f.label+'</span>'
 + '<span class="seg" role="group" aria-label="'+f.label+'">'
-+ '<button data-s="hit" class="'+(st==="hit"?"on":"")+'">命中</button>'
-+ '<button data-s="miss" class="'+(st==="miss"?"on":"")+'">未命中</button>'
-+ '<button data-s="none" class="'+(st==="none"?"on":"")+'">无数据</button>'
++ '<button type="button" data-s="hit" aria-pressed="'+(st==="hit"?"true":"false")+'" class="'+(st==="hit"?"on":"")+'">命中</button>'
++ '<button type="button" data-s="miss" aria-pressed="'+(st==="miss"?"true":"false")+'" class="'+(st==="miss"?"on":"")+'">未命中</button>'
++ '<button type="button" data-s="none" aria-pressed="'+(st==="none"?"true":"false")+'" class="'+(st==="none"?"on":"")+'">无数据</button>'
 + '</span></div>';
 });
 });
@@ -1139,21 +1242,58 @@ var fid = row.getAttribute("data-fact");
 var btns = row.querySelectorAll("button");
 for(var j=0;j<btns.length;j++){
 btns[j].addEventListener("click", function(){
-factState[fid] = this.getAttribute("data-s");
-delete factAuto[fid];
-renderFacts();
+setFact(fid, this.getAttribute("data-s"), 0);
+renderFacts({id:fid, s:factState[fid]});
 });
 }
 })(segs[i]);
 }
+if(focus){
+var back = document.querySelector('.fact[data-fact="'+focus.id+'"] button[data-s="'+focus.s+'"]');
+if(back) back.focus();
+}
+updateEvidenceSummary();
+}
+/* 互斥证据：同一组里只能有一个「命中」。只把已经命中的兄弟改成未命中，不动「无数据」，避免预设案例的分数被改写。 */
+var MUTEX = [
+  ["f_weightlow","f_weightok","f_weighthigh"],
+  ["f_moldlow","f_moldok"],
+  ["f_ratio","f_ratiook"],
+  ["f_ventoverdue","f_ventok"],
+  ["f_headold","f_headnew"],
+  ["f_shorttime","f_injok","f_longtime"],
+  ["f_curecut","f_cureok"],
+  ["f_presslow","f_pressok"],
+  ["f_smooth","f_tear"]
+];
+function clearMutexHits(id){
+var cleared = [];
+MUTEX.forEach(function(group){
+if(group.indexOf(id)<0) return;
+group.forEach(function(other){
+if(other!==id && factState[other]==="hit"){
+factState[other] = "miss";
+delete factAuto[other];
+cleared.push(FACT_LABEL[other]);
+}
+});
+});
+return cleared;
 }
 function setFact(id, state, auto){
 factState[id] = state;
 if(auto) factAuto[id]=true; else delete factAuto[id];
+var cleared = state==="hit" ? clearMutexHits(id) : [];
+var note = $("mutexNote");
+if(note && cleared.length) note.textContent = "「"+FACT_LABEL[id]+"」与「"+cleared.join("、")+"」不能同时命中，已把后者改为未命中。";
+return cleared;
 }
 
 /* ---------- 表型三项 → 证据同步 ---------- */
+var FORM_OWNED = ["f_highest","f_notvent","f_farend","f_disp","f_interface","f_samecav","f_stripe","f_smooth","f_tear","f_coarse"];
 function syncFromForm(){
+/* 只清掉上次由表型带入的项，手改过的证据保留。避免「先选顶部、再改远端」时最高点仍然命中。 */
+FORM_OWNED.forEach(function(id){ if(factAuto[id]){ factState[id]="none"; delete factAuto[id]; }});
 var r = $("selRegion").value, d = $("selDist").value, w = $("selWall").value;
 if(r==="high"){ setFact("f_highest","hit",1); setFact("f_notvent","miss",1);}
 if(r==="far"){ setFact("f_farend","hit",1);}
@@ -1184,6 +1324,20 @@ function showTab(name){
 for(var k=0;k<tabs.length;k++) tabs[k].setAttribute("aria-selected", tabs[k].getAttribute("data-tab")===name? "true":"false");
 ["form","text","img"].forEach(function(n){ $("pane-"+n).classList.toggle("on", n===name);});
 }
+(function(){
+var tabBtns = document.querySelectorAll(".tab");
+for(var i=0;i<tabBtns.length;i++){
+tabBtns[i].addEventListener("keydown", function(e){
+var dir = e.key==="ArrowRight"? 1 : e.key==="ArrowLeft"? -1 : 0;
+if(!dir) return;
+e.preventDefault();
+var list = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+var idx = list.indexOf(this);
+var next = list[(idx+dir+list.length)%list.length];
+next.click(); next.focus();
+});
+}
+})();
 
 /* ---------- 文字解析 ---------- */
 var KEYWORDS = [
@@ -1281,6 +1435,20 @@ renderFacts();
 });
 
 /* ---------- 图片（模拟识别） ---------- */
+function adoptMorph(ph, region, dist, wall){
+$("selPheno").value = ph;
+$("selRegion").value = region || "";
+$("selDist").value = dist || "";
+$("selWall").value = wall || "";
+syncFromForm();
+showTab("form");
+}
+document.querySelectorAll("#morphs .morph").forEach(function(btn){
+btn.addEventListener("click", function(){
+adoptMorph(this.getAttribute("data-ph"), this.getAttribute("data-region"), this.getAttribute("data-dist"), this.getAttribute("data-wall"));
+$("logBox").innerHTML = '<div><span class="lt">提示</span>已按剖切形态填入表型「'+esc(PHENOS[this.getAttribute("data-ph")].name)+'」。照片看不出保养、称重和杯泡，请到证据区补这些，再开始推理。</div>';
+});
+});
 $("dropBox").addEventListener("click", function(){ $("fileInp").click();});
 $("fileInp").addEventListener("change", function(){
 var file = this.files && this.files[0];
@@ -1289,21 +1457,36 @@ var url = URL.createObjectURL(file);
 var img = $("upImg"); img.src = url; img.style.display = "block";
 $("dropHint").style.display = "none";
 $("dropBox").classList.add("scanning");
-$("imgResult").innerHTML = '<p class="hint">正在「识别」照片中的缺陷区域…（模拟过程）</p>';
+$("imgResult").innerHTML = '<p class="hint">正在看文件名里有没有表型关键词…（不做像素识别）</p>';
 setTimeout(function(){
 $("dropBox").classList.remove("scanning");
-$("imgResult").innerHTML =
-'<div style="border:1px solid var(--teal);border-radius:8px;padding:12px 14px;background:var(--teal-d)">'
-+ '<b style="color:var(--teal)">模拟识别结果</b>（Demo 中图像识别为模拟，实际项目需接入视觉模型）<br/>'
-+ '识别到的样子：<b>顶部区域有一个孤立大空洞，内壁光滑</b> → 表型判断为 <b>V-GAS 困气型</b>。'
-+ '<div style="margin-top:10px"><button class="btn teal sm" id="btnAdopt">采用这个结果，填入表单</button></div></div>';
-$("btnAdopt").addEventListener("click", function(){
-$("selPheno").value = "V-GAS";
-$("selRegion").value = "high"; $("selWall").value = "smooth"; $("selDist").value = "single";
-syncFromForm(); showTab("form");
-$("imgResult").innerHTML = '<p class="hint" style="color:var(--teal)">已填入：请到证据区补充同腔连发、保养记录等信息（照片看不出这些），然后点「开始推理」。</p>';
+var name = file.name || "";
+var hit = null;
+KEYWORDS.forEach(function(rule){
+if(hit || !rule.ph) return;
+(rule.kws||[]).forEach(function(kw){ if(name.indexOf(kw)>=0) hit = rule; });
 });
-}, REDUCED? 300: 2300);
+var body = '<div style="border:1px solid var(--teal);border-radius:8px;padding:12px 14px;background:var(--teal-d)">'
++ '<b style="color:var(--teal)">照片只在本机预览</b>。本 Demo 不把每张图都判成同一种空洞。<br/>';
+if(hit){
+body += '文件名里有「'+esc(hit.kws.filter(function(kw){ return name.indexOf(kw)>=0; })[0])+'」，可按文字规则暂记为 <b>'+hit.ph+' · '+esc(PHENOS[hit.ph].name)+'</b>。'
++ '<div style="margin-top:10px"><button type="button" class="btn teal sm" id="btnAdoptName">采用文件名线索</button></div>';
+} else {
+body += '文件名没有表型关键词。请用上方六种剖切形态点选，或把关键词写进文件名（例如「顶部-光滑.png」）再试。';
+}
+body += '<div style="margin-top:10px"><button type="button" class="btn sm" id="btnAdoptScript">演示脚本：假定为顶部光滑大空洞</button></div></div>';
+$("imgResult").innerHTML = body;
+var nameBtn = $("btnAdoptName");
+if(nameBtn) nameBtn.addEventListener("click", function(){
+$("txtDesc").value = name.replace(/\.[a-z0-9]+$/i,"");
+$("btnParse").click();
+showTab("text");
+});
+$("btnAdoptScript").addEventListener("click", function(){
+adoptMorph("V-GAS","high","single","smooth");
+$("imgResult").innerHTML = '<p class="hint" style="color:var(--teal)">已按演示脚本填入困气型。请到证据区补充同腔连发、保养记录（照片看不出这些），然后点「开始推理」。</p>';
+});
+}, REDUCED? 200: 700);
 });
 
 /* ---------- 预置案例 ---------- */
@@ -1322,11 +1505,11 @@ function resetAll(){
 FACTS.forEach(function(f){ factState[f.id]="none"; delete factAuto[f.id];});
 $("selRegion").value=""; $("selDist").value=""; $("selWall").value="";
 cupState = "none"; renderCupSeg();
+var note = $("mutexNote"); if(note) note.textContent="";
 WINDOWS.forEach(function(w){ if(w.input){ var inp = $("win-"+w.id); if(inp){ inp.value=""; checkWin(w);} }});
 }
-document.querySelectorAll(".preset").forEach(function(btn){
-btn.addEventListener("click", function(){
-var p = PRESETS[this.getAttribute("data-preset")];
+function loadPreset(key){
+var p = PRESETS[key]; if(!p) return;
 resetAll(); showTab("form");
 $("selPheno").value = p.pheno;
 $("selRegion").value = p.region||""; $("selDist").value = p.dist||""; $("selWall").value = p.wall||"";
@@ -1334,13 +1517,22 @@ syncFromForm();
 Object.keys(p.facts).forEach(function(fid){ setFact(fid, p.facts[fid], 0);});
 renderFacts();
 $("logBox").innerHTML = '<div><span class="lt">提示</span>已载入「'+p.label+'」：表型和证据都填好了，直接点下面的「开始推理」看全过程。</div>';
-$("inputCard").scrollIntoView({behavior: REDUCED?"auto":"smooth"});
+return p;
+}
+document.querySelectorAll(".preset").forEach(function(btn){
+btn.addEventListener("click", function(){
+var p = loadPreset(this.getAttribute("data-preset"));
+if(p) $("inputCard").scrollIntoView({behavior: REDUCED?"auto":"smooth"});
 });
 });
 $("btnReset").addEventListener("click", function(){
 resetAll(); renderFacts();
 $("logBox").innerHTML=""; $("hypoList").innerHTML = '<p class="empty-note">已清空。重新填写后点「开始推理」。</p>';
-$("resultCard").style.display="none"; drawGraph([]);
+$("resultCard").style.display="none";
+["confidenceBox","sensitivityBox","contextBox","pendingBox"].forEach(function(id){ if($(id)) $(id).innerHTML=""; });
+var actions = $("reportActions"); if(actions) actions.style.display="none";
+var note = $("mutexNote"); if(note) note.textContent="";
+drawGraph([]);
 document.querySelectorAll(".pstep").forEach(function(el){ el.classList.remove("active","done"); el.querySelector(".verdict").textContent="";});
 });
 
@@ -1388,15 +1580,43 @@ if(cupState==="none"){
 out.push({a:"先做杯泡分流试验（同体系同温打一杯，量乳白/凝胶/不粘时间，看截面有无条纹大孔，并与体系参数卡基线比对）", cost:"低", gain:"高", forRule:(scored[0]||{}).rule||RULES[0], rank:1e9,
 note:"还没做杯泡，等于还没把问题切成两半：杯泡异常 → 查出枪之前（料/配比/混合/料温）；杯泡正常 → 查模具/排气/注料。成本最低、分流价值最高，所以排在所有核查之前。"});
 }
-scored.slice(0,3).forEach(function(s){
-if(s.score<=0) return;
+var positive = scored.filter(function(s){ return s.score>0; });
+var leader = positive[0], second = positive[1];
+positive.slice(0,3).forEach(function(s){
 s.rule.checks.forEach(function(ck){
 if(seen[ck.a]) return; seen[ck.a]=1;
-out.push({a:ck.a, cost:ck.cost, gain:ck.gain, forRule:s.rule, rank: gainRank(ck.gain)*10 + costRank(ck.cost)});
+var rank = gainRank(ck.gain)*10 + costRank(ck.cost);
+if(leader && s.rule.id===leader.rule.id) rank += 40;
+else if(second && s.rule.id===second.rule.id) rank += 20;
+out.push({a:ck.a, cost:ck.cost, gain:ck.gain, forRule:s.rule, rank:rank});
 });
 });
+/* 评分明细里写过「无数据会进核查清单」，这里补上真正能分开前两名、且还没查的证据。 */
+var gapN = 0;
+function roleOf(rule, fid){
+if(!rule) return "none";
+var sup = rule.sup.some(function(e){ return e.f===fid; });
+var exc = rule.exc.some(function(e){ return e.f===fid; });
+if(sup && exc) return "both";
+if(sup) return "sup";
+if(exc) return "exc";
+return "none";
+}
+function pushGap(rule, other){
+if(!rule || gapN>=2) return;
+rule.sup.concat(rule.exc).forEach(function(e){
+if(gapN>=2 || factState[e.f]!=="none" || seen["gap:"+e.f]) return;
+var ra = roleOf(rule, e.f), rb = roleOf(other, e.f);
+if(ra==="none" || ra===rb) return;
+seen["gap:"+e.f] = 1; gapN++;
+out.push({a:"补查还没填的证据：「"+FACT_LABEL[e.f]+"」", cost:"低", gain:"高", forRule:rule, rank:90,
+note:"这条对「"+rule.cause+"」是"+(ra==="exc"?"排除项":"支持项")+(other?"，对「"+other.cause+"」作用不同":"")+"。查完填回证据区再跑一次，用来确认或推翻前两名。它不改变种子公式。"});
+});
+}
+if(leader) pushGap(leader.rule, second && second.rule);
+if(second) pushGap(second.rule, leader.rule);
 out.sort(function(a,b){ return b.rank-a.rank;});
-return out.slice(0,5);
+return out.slice(0,6);
 }
 
 /* ---------- 日志 ---------- */
@@ -1426,7 +1646,8 @@ var W = 940, rowH = 56, top = 26;
 var H = Math.max(190, top*2 + Math.max(scored.length,1)*rowH);
 svg.setAttribute("viewBox", "0 0 "+W+" "+H);
 if(!scored.length){
-svg.innerHTML = '<text x="'+(W/2)+'" y="'+(H/2)+'" fill="#6d7f92" font-size="15" text-anchor="middle">开始推理后，嫌疑名单会出现在这里，线条会一条条连上。</text>';
+svg.innerHTML = '<text x="'+(W/2)+'" y="'+(H/2)+'" fill="#93a6ba" font-size="15" text-anchor="middle">开始推理后，嫌疑名单会出现在这里，线条会一条条连上。</text>';
+renderGraphList([]);
 return;
 }
 var pheno = $("selPheno").value;
@@ -1451,13 +1672,27 @@ var dim = !sc.pending && (sc.zeroed || sc.score===0);
 s += '<g class="gnode" data-rule="'+sc.rule.id+'" opacity="'+(dim?0.55:1)+'">'
 + '<rect x="606" y="'+(y-24)+'" width="316" height="48" rx="8" fill="#1a212d" stroke="'+col+'" stroke-width="1.6"/>'
 + '<text x="620" y="'+(y+2)+'" fill="#e9eef4" font-size="14.5" font-weight="600">'+esc(sc.rule.cause)+(sc.near?' <tspan fill="#f2a63b" font-size="11.5">（邻近表型）</tspan>':"")+'</text>'
-+ '<text x="908" y="'+(y+3)+'" fill="'+col+'" font-size="17" font-weight="700" text-anchor="end" font-family="JetBrains Mono,monospace">'+(sc.pending?"待评分":(dim?"已排除":sc.score+" 分"))+'</text>'
++ '<text x="908" y="'+(y+3)+'" fill="'+col+'" font-size="17" font-weight="700" text-anchor="end" font-family="ui-monospace,monospace">'+(sc.pending?"待评分":(dim?"已排除":sc.score+" 分"))+'</text>'
 + '<text x="620" y="'+(y+17)+'" fill="#6d7f92" font-size="11">'+sc.rule.id+" · "+sc.rule.cat+'类原因 · 点击看解释</text></g>';
 });
 svg.innerHTML = s;
 var nodes = svg.querySelectorAll(".gnode");
 for(var i=0;i<nodes.length;i++){
 nodes[i].addEventListener("click", function(){ showExplain(this.getAttribute("data-rule"));});
+}
+renderGraphList(scored);
+}
+function renderGraphList(scored){
+var box = $("graphList"); if(!box) return;
+if(!scored.length){ box.innerHTML = '<p class="empty-note">窄屏下列出嫌疑和分数，点一条看解释。</p>'; return; }
+box.innerHTML = scored.map(function(sc){
+var dim = !sc.pending && (sc.zeroed || sc.score===0);
+var label = sc.pending ? "待评分" : (dim ? "已排除" : sc.score+" 分");
+return '<button type="button" class="glist" data-rule="'+sc.rule.id+'"><span>'+esc(sc.rule.cause)+(sc.near?"（邻近表型）":"")+'</span><b style="color:'+(sc.pending?"#7fa6c9":scoreColor(sc.score, sc.zeroed))+'">'+label+'</b></button>';
+}).join("");
+var btns = box.querySelectorAll(".glist");
+for(var i=0;i<btns.length;i++){
+btns[i].addEventListener("click", function(){ showExplain(this.getAttribute("data-rule")); });
 }
 }
 function animateEdges(scored){
@@ -1488,16 +1723,17 @@ scored.forEach(function(sc, i){
 var r = sc.rule;
 var conf = sumPos>0 && sc.score>0? Math.round(sc.score/sumPos*100): 0;
 var col = scoreColor(sc.score, sc.zeroed);
-var gainSum = sc.details.filter(function(d){return d.type==="sup"||d.type==="cup";}).reduce(function(a,d){return a+d.pts;},0);
+var shownBase = Math.min(sc.priorScore, sc.score);
+var shownGain = Math.max(0, sc.score - shownBase);
 html += '<div class="hypo'+(sc.zeroed||sc.score===0?" excluded":"")+'">'
 + '<div class="hypo-top"><span class="rank">嫌疑 #'+(i+1)+'</span><h3>'+esc(r.hyp)+'</h3>'
 + '<span class="rid">'+r.id+'</span><span class="cat">'+r.cat+'类原因</span>'
 + (sc.near?'<span class="tag-near">邻近表型候选 · 起步分打六折</span>':"")
 + ((sc.zeroed)?'<span class="tag-out">被强排除证据一票否决</span>':"")
 + '</div>'
-+ '<div class="scorebar"><div class="base" style="width:'+sc.priorScore+'%"></div><div class="gain" data-w="'+Math.min(gainSum, 100-sc.priorScore)+'" style="width:0%"></div></div>'
++ '<div class="scorebar" title="条形按最终得分画：灰是仍保留的起步分，绿是证据净加分。排除扣分已经体现在变短的条上。"><div class="base" style="width:'+shownBase+'%"></div><div class="gain" data-w="'+shownGain+'" style="width:0%"></div></div>'
 + '<div class="scoreline"><span>总分 <span class="big" style="color:'+col+'">'+sc.score+'</span> / 100</span>'
-+ '<span>相对可能性 <b class="num">'+conf+'%</b>（在所有嫌疑里占的份额）</span>'
++ '<span>得分份额 <b class="num">'+conf+'%</b>（正分归一化，不是后验概率）</span>'
 + '<span>起步分 '+sc.priorScore+'（这类缺陷里它历史上的占比）</span></div>'
 + '<ul class="evlist">';
 html += '<li><span class="pts z">起步 '+sc.priorScore+'</span>还没看这次的证据，光凭历史经验：'+PHENOS[r.ph[0]].short+'里，这个原因历史上占约 '+Math.round(r.prior*100)+'%。</li>';
@@ -1526,7 +1762,7 @@ if(top.length){
 var t1 = top[0];
 var sups = t1.details.filter(function(d){ return d.type==="sup";}).slice(0,3);
 cHtml += '本次最可能的原因是 <span class="win">'+esc(t1.rule.hyp)+'（'+t1.rule.id+'）</span>，得分 <b class="num">'+t1.score+'</b> 分';
-if(sumPos>0) cHtml += '，在全部嫌疑里占约 <b class="num">'+Math.round(t1.score/sumPos*100)+'%</b> 的可能性';
+if(sumPos>0) cHtml += '，得分份额约 <b class="num">'+Math.round(t1.score/sumPos*100)+'%</b>（全部正分里的占比，不是校准后的概率）';
 cHtml += '。';
 if(sups.length){
 cHtml += '定下它主要靠这 '+sups.length+' 条证据：';
@@ -1558,7 +1794,7 @@ var supL = sc.details.filter(function(d){return d.type==="sup";}).map(function(d
 var excL = sc.details.filter(function(d){return d.type==="exc"||d.type==="zero";}).map(function(d){ return '<li>'+(d.type==="zero"?"归零":"−25 分")+' · '+esc(d.why)+'</li>';}).join("");
 tHtml += '<div class="tcard'+(i===0?" first":"")+'"><span class="medal">第 '+(i+1)+' 名 · '+sc.rule.id+' · '+sc.rule.cat+'类</span>'
 + '<h3>'+esc(sc.rule.hyp)+'</h3>'
-+ '<div><span class="conf" style="color:'+scoreColor(sc.score,false)+'">'+conf+'%</span> <span class="confl">相对可能性（得分 '+sc.score+' 分）</span></div>'
++ '<div><span class="conf" style="color:'+scoreColor(sc.score,false)+'">'+conf+'%</span> <span class="confl">得分份额（种子分 '+sc.score+'，不是后验概率）</span></div>'
 + (supL? '<ul>'+supL+'</ul>': '<p style="font-size:13.5px;color:var(--muted)">暂无命中的支持证据，主要靠历史占比排在这里。</p>')
 + (excL? '<div style="font-size:13px;color:#ff9d8f">反对证据：</div><ul>'+excL+'</ul>': '')
 + '<div class="fix"><b>确认后标准处置：</b>'+esc(sc.rule.fix)+'</div>'
@@ -1572,6 +1808,12 @@ return '<li><span class="ckn"></span><div><span class="cka">'+esc(ck.a)+'</span>
 + '<span class="pill cost">成本 '+ck.cost+'</span> <span class="pill gain">区分度 '+ck.gain+'</span>'
 + '<div class="ckw">'+(ck.note? esc(ck.note): ('用来确认或推翻嫌疑「'+esc(ck.forRule.cause)+'」（'+ck.forRule.id+'）——查完把结果填回证据区，可以再跑一次推理看排名变化。'))+'</div></div></li>';
 }).join("") || '<li><span class="ckw" style="padding:6px 0">暂无推荐：前三名嫌疑的核查动作都依赖已有证据，或已被排除。</span></li>';
+lastChecks = checks;
+renderConfidence(scored);
+renderSensitivity(scored);
+renderContext(scored);
+renderPending();
+var actions = $("reportActions"); if(actions) actions.style.display = "flex";
 $("resultCard").style.display = "block";
 }
 
@@ -1677,6 +1919,12 @@ var html = '<div class="sysgrid">';
 s.cells.forEach(function(c){ html += '<div class="syscell"><div class="k">'+esc(c[0])+'</div><div class="v">'+esc(c[1])+(c[2]?' <small>'+esc(c[2])+'</small>':'')+'</div></div>';});
 html += '</div><p class="srcnote">数据性质：'+esc(s.nature)+' · 出处：'+esc(s.src)+'<br/>'+esc(s.note)+'</p>';
 $("sysCard").innerHTML = html;
+updateCupHint();
+}
+function updateCupHint(){
+var el = $("cupSysHint"); if(!el) return;
+var s = SYSTEMS[$("selSystem").value];
+el.textContent = s ? "杯泡的乳白 / 凝胶秒数只和当前体系卡比：「"+s.name+"」。换了体系还用旧卡，会把正常反应判成异常。" : "";
 }
 function renderWindows(){
 var html = "";
@@ -1694,9 +1942,34 @@ var inp = $("win-"+w.id), st = $("wstat-"+w.id), why = $("wwhy-"+w.id);
 if(!inp || !st || !why) return;
 var v = parseFloat(inp.value);
 if(isNaN(v)){ st.textContent = "未填实测"; st.className = "wstat"; why.textContent = ""; return; }
-if(v < w.lo){ st.textContent = "偏低 ↓"; st.className = "wstat out"; why.textContent = w.low; }
-else if(v > w.hi){ st.textContent = "偏高 ↑"; st.className = "wstat out"; why.textContent = w.high; }
-else { st.textContent = "在窗口内"; st.className = "wstat in"; why.textContent = "落在通用参考窗口内（仍以本厂规程为准）。"; }
+var text, bridge = null;
+if(v < w.lo){ text = w.low; st.textContent = "偏低 ↓"; st.className = "wstat out"; }
+else if(v > w.hi){ text = w.high; st.textContent = "偏高 ↑"; st.className = "wstat out"; }
+else { text = "落在通用参考窗口内（仍以本厂规程为准）。"; st.textContent = "在窗口内"; st.className = "wstat in"; }
+if(w.id==="mat") bridge = (v<w.lo||v>w.hi) ? ["f_mattemp","hit","写入证据：料温偏离"] : ["f_mattemp","miss","写入证据：料温在窗口内"];
+else if(w.id==="mold"){
+if(v<w.lo) bridge = ["f_moldlow","hit","写入证据：模温偏低"];
+else if(v>w.hi) text += " 种子规则只覆盖「模温偏低」。模温偏高在海信看板里更多对应脱粘或漏料，这里不写入分数。";
+else bridge = ["f_moldok","hit","写入证据：模温在窗口内"];
+} else if(w.id==="press"){
+if(v<w.lo) bridge = ["f_presslow","hit","写入证据：混合压力偏低"];
+else if(v<=w.hi) bridge = ["f_pressok","hit","写入证据：混合压力在窗口内"];
+else text += " 高于常用窗口时不自动写入种子证据，请核对双组分压力是否平衡、枪头是否正常。";
+}
+why.textContent = text;
+if(bridge){
+var b = document.createElement("button");
+b.type = "button"; b.className = "btn sm"; b.style.marginLeft = "8px";
+b.textContent = bridge[2];
+b.addEventListener("click", function(){
+setFact(bridge[0], bridge[1], 0);
+renderFacts();
+var note = $("mutexNote");
+if(note) note.textContent = "已写入证据「"+FACT_LABEL[bridge[0]]+"」= "+(bridge[1]==="hit"?"命中":"未命中")+"。点「开始推理」后分数才会变。";
+});
+why.appendChild(document.createTextNode(" "));
+why.appendChild(b);
+}
 }
 function renderCupSeg(){
 var seg = $("cupSeg"); if(!seg) return;
@@ -1745,6 +2018,144 @@ box.innerHTML = '<div class="voidbox"><h3>空洞分型判定：<span class="vcod
 }
 }
 
+/* ---------- 定案置信 / 敏感性 / 知识对照（不改种子分） ---------- */
+var lastChecks = [];
+var HX_BY_RULE = {
+"R-V01":["看板·空洞：局部排气不良 → 在排气不良处加排气孔"],
+"R-V02":["看板没有单列「注料过快」。反应过快 / 料温过高在看板上对应调整料温，和本条不是同一件事"],
+"R-V04":["看板·收缩：注入量少、密度低于工艺要求","看板·空洞里的「枪头自由密度过高」仍是待验证项，不进分数"],
+"R-V06":["看板·漏料：注入量过多、模温过高或自由密度过低。漏料单独出现时，不要自动判成内部空洞"],
+"R-V07":["看板·空洞：模具温度低、预热温度低","看板提醒：模温对脱粘是 U 形，过高过低都会脱粘。本条只覆盖偏低造成的弥散空洞"],
+"R-V08":["看板·空洞：原料温度过高。种子规则把料温过高和过低都记成「偏离」，方向要在交接里写明"],
+"R-V09":["看板·空洞对应黑白比例过高；收缩和漏料对应黑白比例过低。种子规则只记「偏离」，没有拆方向"],
+"R-V11":["看板口径：黑白料压力差应小于 10 bar。这是海信现场数，不是通用阈值"],
+"R-V12":["看板口径：混合室、喷嘴、针阀建议一个月清理。只属海信，不得推广成行业周期"],
+"R-V13":["看板·泡孔粗大：硅油降解、油脂污染、混合差"],
+"R-V14":["看板·压力泡沫收缩：注入量少、黑白比例过低、过填充不足"],
+"R-V15":["看板·脱粘：预热低、模温低、表面脏污或油脂"],
+"R-D01":["看板·脱粘：预热、模温、表面、黑白比例。模温两端都会脱粘"],
+"R-C01":["看板·漏料：注入量过多、预热过高、自由密度过低导致过填充过大"],
+"R-S01":["看板·收缩：注入量少、黑白比例过低"],
+"R-S02":["看板·收缩：过填充不足时要同时看模温和自由密度，本条只覆盖脱模过早"],
+"R-M01":["国标锚点：导热必须分初始和长期。表 5.2 限值仍空白，页内密度 / 导热量级不冒充标准限值"]
+};
+var KB_BY_RULE = {
+"R-V01":["VENT-01"],
+"R-V05":["PAT-01"],
+"R-V09":["PAT-01","HFO-02"],
+"R-V13":["HFO-04"],
+"R-M01":["STD-01","PAT-01"],
+"R-C01":["PAT-01"],
+"R-D01":["STD-01"]
+};
+var PENDING_BY_PHENO = {
+"V-GAS":["枪头自由密度是否过高","注料落点是否偏出后背板","预装流动通道是否被挡"],
+"V-FILL":["枪头自由密度是否过高","注料落点是否偏移","流动通道是否被挡"],
+"V-DISP":["黑白比例是偏高还是偏低（看板方向相反，种子规则未拆开）","自由密度相对工艺窗"],
+"V-MIX":["预混、输送、枪头全链条有没有油脂污染","枪头清理是否只按本厂周期，而不是照搬一个月"],
+"V-CELL":["硅油是否在保质期内","油脂污染是否进了料"],
+"V-SHRINK":["自由密度是否高到过填充不足","黑白比例是否过低"],
+"V-INTF":["内胆表面是否过光滑、做过电晕没有","拼装接缝是否密封不严"],
+"D":["表面张力 / 电晕","组合聚醚粘度是否过低","油脂污染","模温偏高这一端（U 形，不进当前分数）"],
+"L":["预热是否过高（和空洞的「预热低」方向相反）","自由密度是否过低","拼装密封"],
+"S":["自由密度","黑白比例是否过低"],
+"C":["自由密度过低导致过填充过大","黑白比例方向"],
+"M":["自由密度相对本厂工艺窗，而不是对照别的体系"]
+};
+function assessConfidence(scored){
+var top = scored.filter(function(s){ return s.score>0; });
+if(!top.length) return {band:"none", title:"不足", text:"没有剩下正分嫌疑，不能定案。先补杯泡、称重、剖切形态里还空着的项。"};
+var t1 = top[0], t2 = top[1];
+var margin = t2 ? t1.score - t2.score : t1.score;
+var supN = t1.details.filter(function(d){ return d.type==="sup"; }).length;
+var cupDone = cupState!=="none";
+var bits = ["领先 "+t1.score+" 分"+(t2 ? "，比「"+t2.rule.cause+"」高 "+margin+" 分" : "，没有第二名正分"), "命中的支持证据 "+supN+" 条", cupDone ? (cupState==="ok"?"已做杯泡：正常":"已做杯泡：异常") : "杯泡还没做"];
+if(t1.near) bits.push("领先项来自邻近表型，起步分打过六折");
+bits.push("归类："+t1.rule.cat+"类");
+var band = "low", title = "低";
+if(margin>=40 && supN>=3 && cupDone && !t1.near){ band = "high"; title = "高"; }
+else if(margin>=20 && supN>=2 && !t1.near){ band = "mid"; title = "中"; }
+return {band:band, title:title, text:bits.join("；")+"。"};
+}
+function renderConfidence(scored){
+var box = $("confidenceBox"); if(!box) return;
+var a = assessConfidence(scored);
+var whyHigh = a.band==="high" ? "分差、支持证据和杯泡分流都齐了，才给到「高」。" : "「高」要同时满足：领先超过 40 分、至少 3 条支持证据、杯泡已做、且不是邻近表型打折来的。缺任何一条就停在中或低。";
+box.innerHTML = '<div class="confbox"><div class="confband '+a.band+'">定案置信 · '+a.title+'</div>'
++ '<div>'+esc(a.text)+'</div>'
++ '<p class="method">'+whyHigh+' 种子分 = 历史占比 × 100 + 支持证据权重 − 排除证据（强排除直接归零），再截断到 0–100。卡片上的百分比是<b>得分份额</b>：把正分加总后看每一条占多少，不是校准过的后验概率，也不能当成「有百分之多少把握」。正式上线仍要用本厂 50–100 个闭环案例回测这些权重。</p></div>';
+}
+function renderSensitivity(scored){
+var box = $("sensitivityBox"); if(!box) return;
+var top = scored.filter(function(s){ return s.score>0; });
+if(!top.length){ box.innerHTML = ""; return; }
+var leader = top[0];
+var pheno = $("selPheno").value;
+var sups = leader.details.filter(function(d){ return d.type==="sup"; }).slice().sort(function(a,b){ return b.pts-a.pts; }).slice(0,3);
+if(!sups.length){
+box.innerHTML = '<div class="sens"><b>什么证据会改变结论：</b>领先项几乎没有命中的支持证据，先补证据，不必做翻转。</div>';
+return;
+}
+var items = sups.map(function(d){
+var saved = factState[d.fact];
+factState[d.fact] = "miss";
+var alt;
+try { alt = buildCandidates(pheno).map(scoreCandidate).sort(function(a,b){ return b.score-a.score; }); }
+finally { factState[d.fact] = saved; }
+var neu = alt && alt[0];
+if(!neu) return "";
+var changed = neu.rule.id !== leader.rule.id;
+return '<li>若把「'+esc(FACT_LABEL[d.fact])+'」从命中改成未命中：'+(changed
+? '领先会换成「'+esc(neu.rule.cause)+'」（'+neu.score+' 分）。'
+: '领先仍是「'+esc(leader.rule.cause)+'」，分数从 '+leader.score+' 降到 '+neu.score+'。')+'</li>';
+}).join("");
+box.innerHTML = '<div class="sens"><b>什么证据会改变结论</b>（一次只翻一条，种子公式不变）<ul>'+items+'</ul></div>';
+}
+function renderContext(scored){
+var box = $("contextBox"); if(!box) return;
+var top = scored.filter(function(s){ return s.score>0; })[0];
+if(!top){ box.innerHTML = ""; return; }
+var id = top.rule.id;
+var hx = HX_BY_RULE[id] || [];
+var kb = KB_BY_RULE[id] || [];
+if(!hx.length && !kb.length){ box.innerHTML = ""; return; }
+var html = '<div class="ctx"><b>对照知识（不参与这次打分）</b>';
+hx.forEach(function(line){ html += '<div>'+esc(line)+'</div>'; });
+if(kb.length){
+html += '<div>知识包入口：'+kb.map(function(code){
+var el = document.getElementById("kb-"+code);
+return '<a href="#kb-'+code+'">'+code+(el?'':'')+'</a>';
+}).join(" · ")+'</div>';
+}
+html += '</div>';
+box.innerHTML = html;
+}
+function renderPending(){
+var box = $("pendingBox"); if(!box) return;
+var items = PENDING_BY_PHENO[$("selPheno").value] || [];
+if(!items.length){ box.innerHTML = ""; return; }
+box.innerHTML = '<div class="pendbox"><b>待验证核查</b> <span class="srctag tag-pend">不参与打分</span>'
++ '<ul>'+items.map(function(x){ return '<li>'+esc(x)+'</li>'; }).join("")+'</ul>'
++ '<p class="hint">这些问法来自海信看板里种子规则还没覆盖的成因。只提醒现场多看一眼，不加减分。</p></div>';
+}
+function buildBriefText(){
+var pheno = $("selPheno").value;
+var lines = ["【发泡缺陷根因推理纪要】", "表型："+pheno+" "+PHENOS[pheno].name];
+lines.push("杯泡："+(cupState==="bad"?"异常":cupState==="ok"?"正常":"未做"));
+var sys = SYSTEMS[$("selSystem").value];
+if(sys) lines.push("体系："+sys.name);
+var band = $("confidenceBox");
+if(band) lines.push(band.innerText.replace(/\s+/g," ").trim());
+lines.push("");
+lines.push(($("conclusionText").innerText||"").replace(/\s+/g," ").trim());
+lines.push("");
+lines.push("下一步：");
+(lastChecks||[]).forEach(function(ck,i){ lines.push((i+1)+". "+ck.a+"（成本"+ck.cost+"，区分度"+ck.gain+"）"); });
+lines.push("");
+lines.push("说明：种子规则排序，不是自动判责。得分份额不是后验概率。知识包 v1.1 与海信看板对照不参与打分。");
+return lines.join("\n");
+}
+
 /* ---------- 初始渲染 ---------- */
 (function(){
 var sysSel = $("selSystem"), sHtml = "";
@@ -1754,8 +2165,61 @@ sysSel.addEventListener("change", renderSysCard);
 renderSysCard();
 renderWindows();
 })();
+document.querySelectorAll(".sup-id").forEach(function(el){
+var item = el.closest(".sup-item");
+var code = (el.textContent||"").trim();
+if(item && code) item.id = "kb-"+code;
+});
+document.querySelectorAll("table.maptable, table.boardtable").forEach(function(t){
+if(t.parentElement && t.parentElement.classList.contains("table-scroll")) return;
+var wrap = document.createElement("div");
+wrap.className = "table-scroll";
+t.parentNode.insertBefore(wrap, t);
+wrap.appendChild(t);
+});
+var fastBox = $("chkFast");
+if(fastBox){
+if(localStorage.getItem("foamFast")==="1" || /[?&]fast=1/.test(location.search)) fastBox.checked = true;
+fastBox.addEventListener("change", function(){ try{ localStorage.setItem("foamFast", fastBox.checked?"1":"0"); }catch(e){} });
+}
+if($("btnCopy")) $("btnCopy").addEventListener("click", function(){
+var text = buildBriefText();
+var tip = $("copyTip");
+function done(ok){ if(tip) tip.textContent = ok ? "已复制，可粘到交接记录。" : "浏览器拦住了剪贴板，请选中结论文字手动复制。"; }
+if(navigator.clipboard && navigator.clipboard.writeText){
+navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(false); });
+} else done(false);
+});
+if($("btnPrint")) $("btnPrint").addEventListener("click", function(){
+document.body.classList.add("print-report");
+window.print();
+});
+window.addEventListener("afterprint", function(){ document.body.classList.remove("print-report"); });
 renderFacts();
 drawGraph([]);
+if(/[?&]selftest=1/.test(location.search)){
+var lines = [];
+["vent","meter","moldtemp"].forEach(function(k){
+loadPreset(k);
+var scored = buildCandidates($("selPheno").value).map(scoreCandidate).sort(function(a,b){ return b.score-a.score; });
+lines.push([k, scored[0].rule.id, scored[0].score, scored[1].rule.id, scored[1].score, assessConfidence(scored).band].join(" "));
+});
+loadPreset("vent");
+cupState = "ok";
+var withCup = buildCandidates("V-GAS").map(scoreCandidate).sort(function(a,b){ return b.score-a.score; });
+lines.push(["vent-cup", withCup[0].rule.id, withCup[0].score, assessConfidence(withCup).band].join(" "));
+loadPreset("vent");
+$("selRegion").value = "far";
+syncFromForm();
+lines.push(["region-switch", factState.f_highest, factState.f_farend, factState.f_ventoverdue, factState.f_smooth].join(" "));
+setFact("f_weightlow","hit",0);
+setFact("f_weightok","hit",0);
+lines.push(["mutex", factState.f_weightlow, factState.f_weightok].join(" "));
+var pre = document.createElement("pre");
+pre.id = "selftest";
+pre.textContent = lines.join("\n");
+document.body.appendChild(pre);
+}
 </script>
 </body>
 </html>
