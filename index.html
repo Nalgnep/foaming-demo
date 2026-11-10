@@ -317,6 +317,29 @@ table.boardtable td:first-child{width:44%}
   .seg button{min-height:40px;padding:8px 12px}
   h1,.intro h1{font-size:22px}
 }
+/* ---------- 故障模拟器 ---------- */
+.sim-presets{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px}
+.sim-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px;align-items:start}
+.sim-layout>div{min-width:0}
+.sim-slider{display:grid;grid-template-columns:7.4rem minmax(0,1fr) auto;gap:8px;align-items:center;padding:5px 0}
+.sim-slider .sl{font-size:13.5px;color:var(--muted)}
+.sim-val{font-family:var(--mono);font-size:13px;min-width:4.2rem;text-align:right;color:var(--ink);white-space:nowrap}
+.sim-val.out{color:#ffb3a8}
+input[type="range"]{width:100%;accent-color:#f2a63b;height:28px}
+.sim-map{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.65}
+.sim-flip{display:none;margin:0 0 10px;border:1px solid var(--amber);background:#241a09;color:#ffd9a0;border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.6}
+.sim-flip.on{display:block}
+.sim-rank{border:1px solid var(--line);border-radius:8px;background:var(--bg2);padding:4px 12px 8px}
+.sim-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;width:100%;text-align:left;background:transparent;color:var(--ink);border:0;border-bottom:1px dashed #202a38;padding:8px 0;font-family:var(--sans);font-size:14px;cursor:pointer}
+.sim-row b{font-family:var(--mono);flex:none}
+.sim-row.lead{background:#241a09;border-radius:8px;padding:8px 10px;border-bottom:0}
+.sim-row.is-new{outline:2px solid var(--amber);outline-offset:1px}
+.sim-mini{font-size:12px;color:var(--faint)}
+@media(max-width:860px){.sim-layout{grid-template-columns:1fr}}
+@media(max-width:560px){
+  .sim-slider{grid-template-columns:minmax(0,1fr) auto}
+  .sim-slider .sl{grid-column:1/-1}
+}
 @media print{
   body{background:#fff;color:#111}
   .topbar,.skip,.btn,.presets,.drop,.scanline{display:none!important}
@@ -334,6 +357,7 @@ table.boardtable td:first-child{width:44%}
     <div class="brand">发泡根因推理<span>知识包 v1.1 · 种子规则</span></div>
     <nav aria-label="页内导航">
       <a href="#workbench">工作台</a>
+      <a href="#simCard">故障模拟</a>
       <a href="#knowledge">工艺窗口</a>
       <a href="#evidenceCard">证据</a>
       <a href="#graphCard">因果图</a>
@@ -471,6 +495,93 @@ table.boardtable td:first-child{width:44%}
         <h3 class="subh">工艺窗口速查（多来源交叉的通用范围）</h3>
         <div id="winList"></div>
         <p class="srcnote"><b>参考窗口，非判废线：</b>以上是多来源交叉一致的通用范围，正式判定以本厂体系参数卡与工艺规程为准。填入实测值可看偏离方向；料温、模温、混合压力还能一键写入证据，分数要等再次点「开始推理」才变。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 故障模拟器 ===================== -->
+  <section class="card" id="simCard">
+    <div class="sec-head"><span class="step-badge">模拟</span><h2>故障模拟器</h2><span class="sub">拖参数就改证据。排名用的是本页同一套种子分、得分份额和定案置信，没有另一套模型。</span></div>
+    <p class="hint" style="margin-top:0">滑块只落到已经存在的命中 / 未命中。料温离开 20–25℃ →「料温偏离」；模温低于 35℃ →「模温偏低」，35–45℃ →「模温在标内」，再高不进种子分。注料量、注射时间、黑白料指数、预热和排气孔也按这个办法写进证据区。环境湿度没有单独证据，这里用的是「环境温度同步偏低」。表型决定从哪一组规则里抽嫌疑，所以预设会把空洞长相和参数一起放好。恢复正常时，混合压力按达标写入，因为模拟器没有单独的压力滑块。带区是知识包里的参考窗，不是本厂判废线。</p>
+    <div class="sim-presets">
+      <button type="button" class="btn" id="simReset">恢复正常</button>
+      <button type="button" class="preset" data-sim="coldmat">低温料</button>
+      <button type="button" class="preset" data-sim="moldlow">模温不足</button>
+      <button type="button" class="preset" data-sim="shortshot">注料不足</button>
+      <button type="button" class="preset" data-sim="ventblock">排气堵塞</button>
+    </div>
+    <div class="sim-layout">
+      <div>
+        <div class="grid2">
+          <div>
+            <label class="flabel" for="simPheno">假定看到的表型</label>
+            <select id="simPheno"></select>
+          </div>
+          <div>
+            <label class="flabel" for="simRegion">空洞位置（写入位置证据）</label>
+            <select id="simRegion">
+              <option value="">未确认</option>
+              <option value="high">顶部 / 最高点</option>
+              <option value="far">远离注料口</option>
+              <option value="mid">泡层中部</option>
+              <option value="other">其他区域</option>
+            </select>
+          </div>
+          <div>
+            <label class="flabel" for="simDist">分布</label>
+            <select id="simDist">
+              <option value="">未确认</option>
+              <option value="single">孤立单个</option>
+              <option value="samecav">同腔连续同位置</option>
+              <option value="disp">弥散多处</option>
+            </select>
+          </div>
+          <div>
+            <label class="flabel" for="simWall">内壁</label>
+            <select id="simWall">
+              <option value="">未确认</option>
+              <option value="smooth">光滑</option>
+              <option value="tear">撕裂状</option>
+              <option value="coarse">泡孔粗大</option>
+            </select>
+          </div>
+        </div>
+        <div class="sim-slider"><span class="sl" id="lab-simMat">料温</span><input type="range" id="simMat" min="16" max="32" step="1" value="22" aria-labelledby="lab-simMat" /><span class="sim-val" id="val-simMat">22℃</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simMold">模具温度</span><input type="range" id="simMold" min="25" max="55" step="1" value="40" aria-labelledby="lab-simMold" /><span class="sim-val" id="val-simMold">40℃</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simShot">注料量</span><input type="range" id="simShot" min="80" max="120" step="1" value="100" aria-labelledby="lab-simShot" /><span class="sim-val" id="val-simShot">100%</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simInj">注射时间</span><input type="range" id="simInj" min="70" max="140" step="1" value="100" aria-labelledby="lab-simInj" /><span class="sim-val" id="val-simInj">100%</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simAmb">环境温度</span><input type="range" id="simAmb" min="0" max="1" step="1" value="1" aria-labelledby="lab-simAmb" /><span class="sim-val" id="val-simAmb">正常</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simIndex">黑白料指数</span><input type="range" id="simIndex" min="90" max="150" step="1" value="115" aria-labelledby="lab-simIndex" /><span class="sim-val" id="val-simIndex">115</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simPreheat">箱体预热</span><input type="range" id="simPreheat" min="0" max="2" step="1" value="1" aria-labelledby="lab-simPreheat" /><span class="sim-val" id="val-simPreheat">正常</span></div>
+        <div class="sim-slider"><span class="sl" id="lab-simVent">排气孔</span><input type="range" id="simVent" min="0" max="2" step="1" value="0" aria-labelledby="lab-simVent" /><span class="sim-val" id="val-simVent">通畅</span></div>
+        <p class="hint" id="simWarn"></p>
+        <div style="margin-top:8px">
+          <span class="flabel">杯泡（决定置信能不能到「高」，本身不是滑块）</span>
+          <span class="seg" id="simCup" role="group" aria-label="模拟器杯泡">
+            <button type="button" data-s="none" class="on">未做</button>
+            <button type="button" data-s="ok">杯泡正常</button>
+            <button type="button" data-s="bad">杯泡异常</button>
+          </span>
+        </div>
+        <details style="margin-top:12px">
+          <summary style="cursor:pointer;font-size:14px;font-weight:700;color:var(--muted)">每个滑块写进哪条证据</summary>
+          <ul class="sim-map">
+            <li><b>料温</b> 20–25℃ 内 →「料温偏离」未命中；离开这段 → 命中。</li>
+            <li><b>模具温度</b> 低于 35℃ →「模温偏低」命中；35–45℃ →「模温在标内」命中；高于 45℃ 不写种子证据。</li>
+            <li><b>注料量</b> 相对设定值，10% 这条带取自知识包里过填充实施例的量级。低于 90% → 称重偏低，并记计量漂移；高于 110% → 称重偏高。90–110% 只把「计量漂移」记成未命中，不写「称重合格」——那条在种子规则里是漏料型的支持，不是平安符。排气堵塞预设会另外写上称重合格，用来排除少料。</li>
+            <li><b>注射时间</b> 相对标准时长。低于 90% → 注料时间短于下限；90–110% → 在标准内；高于 110% → 注料时间被拉长。</li>
+            <li><b>环境温度</b> 拨到偏低 →「环境温度同步偏低」命中。知识包没有环境湿度的证据位，所以没有湿度滑块。</li>
+            <li><b>黑白料指数</b> 105–130 内 →「配比在标准带」；离开 →「配比偏离」。发泡剂含量没有单独证据，不另做滑块。</li>
+            <li><b>箱体预热</b> 偏低 →「内胆预热温度偏低」命中。偏高在海信看板里对应漏料，种子规则没覆盖，不进分。</li>
+            <li><b>排气孔</b> 通畅 →「刚保养且抽检通畅」；未查 → 两条都留无数据；堵塞 →「保养逾期」命中。</li>
+          </ul>
+        </details>
+      </div>
+      <div>
+        <div class="sim-flip" id="simFlip" role="status"></div>
+        <div id="simConf"></div>
+        <div class="sim-rank" id="simRank" aria-live="polite"></div>
+        <p class="hint">点一条原因可看原来的大白话解释。这组证据已经写进下方证据区，点「开始推理」能看逐步日志。</p>
       </div>
     </div>
   </section>
@@ -1517,6 +1628,7 @@ syncFromForm();
 Object.keys(p.facts).forEach(function(fid){ setFact(fid, p.facts[fid], 0);});
 renderFacts();
 $("logBox").innerHTML = '<div><span class="lt">提示</span>已载入「'+p.label+'」：表型和证据都填好了，直接点下面的「开始推理」看全过程。</div>';
+if(typeof simMirrorCase==="function") simMirrorCase(key);
 return p;
 }
 document.querySelectorAll(".preset").forEach(function(btn){
@@ -2195,6 +2307,233 @@ document.body.classList.add("print-report");
 window.print();
 });
 window.addEventListener("afterprint", function(){ document.body.classList.remove("print-report"); });
+/* ---------- 故障模拟器：滑块只写已有证据，分数走同一套引擎 ---------- */
+var SIM_OWNED = ["f_mattemp","f_moldlow","f_moldok","f_weightlow","f_weightok","f_weighthigh","f_meterdrift","f_shorttime","f_injok","f_longtime","f_ambientlow","f_ratio","f_ratiook","f_preheat","f_ventok","f_ventoverdue"];
+var SIM_EXTRA_IDS = ["f_othercav","f_batchtime","f_overflow","f_pressok","f_sameline"];
+var simExtra = {};
+var simLeader = "";
+var simLeaderName = "";
+var simMarked = "";
+var simLock = false;
+var SIM_PRESETS = {
+  coldmat:{pheno:"V-DISP", region:"mid", dist:"disp", wall:"", cup:"bad", mat:16, mold:40, shot:100, inj:100, amb:1, index:115, preheat:1, vent:1, extra:{}},
+  moldlow:{pheno:"V-DISP", region:"mid", dist:"disp", wall:"", cup:"none", mat:22, mold:30, shot:100, inj:100, amb:0, index:115, preheat:1, vent:1, extra:{f_sameline:"miss"}},
+  shortshot:{pheno:"V-FILL", region:"far", dist:"single", wall:"", cup:"none", mat:22, mold:40, shot:85, inj:100, amb:1, index:115, preheat:1, vent:1, extra:{f_overflow:"miss", f_pressok:"hit"}},
+  ventblock:{pheno:"V-GAS", region:"high", dist:"samecav", wall:"smooth", cup:"none", mat:22, mold:40, shot:100, inj:100, amb:1, index:115, preheat:1, vent:2, extra:{f_othercav:"miss", f_batchtime:"miss", f_weightok:"hit"}}
+};
+function simNum(id, fallback){
+  var el = $(id); var v = el ? parseFloat(el.value) : NaN;
+  return isNaN(v) ? fallback : v;
+}
+function simRead(){
+  return {
+    pheno: ($("simPheno") && $("simPheno").value) || "V-GAS",
+    region: $("simRegion") ? $("simRegion").value : "",
+    dist: $("simDist") ? $("simDist").value : "",
+    wall: $("simWall") ? $("simWall").value : "",
+    cup: cupState,
+    mat: simNum("simMat", 22),
+    mold: simNum("simMold", 40),
+    shot: simNum("simShot", 100),
+    inj: simNum("simInj", 100),
+    amb: simNum("simAmb", 1),
+    index: simNum("simIndex", 115),
+    preheat: simNum("simPreheat", 1),
+    vent: simNum("simVent", 0)
+  };
+}
+function simDerive(p){
+  var facts = {};
+  var notes = [];
+  function put(id, st){ facts[id] = st; }
+  if(p.mat<20 || p.mat>25) put("f_mattemp","hit"); else put("f_mattemp","miss");
+  if(p.mold<35) put("f_moldlow","hit");
+  else if(p.mold<=45) put("f_moldok","hit");
+  else notes.push("模温高于 45℃：种子规则只覆盖偏低，这一档不写证据。");
+  if(p.shot<90){ put("f_weightlow","hit"); put("f_meterdrift","hit"); }
+  else if(p.shot>110) put("f_weighthigh","hit");
+  else put("f_meterdrift","miss");
+  if(p.inj<90) put("f_shorttime","hit");
+  else if(p.inj>110) put("f_longtime","hit");
+  else { put("f_injok","hit"); put("f_shorttime","miss"); put("f_longtime","miss"); }
+  put("f_ambientlow", p.amb<1 ? "hit" : "miss");
+  if(p.index<105 || p.index>130) put("f_ratio","hit"); else put("f_ratiook","hit");
+  if(p.preheat<=0) put("f_preheat","hit");
+  else {
+    put("f_preheat","miss");
+    if(p.preheat>=2) notes.push("预热偏高：看板里对应漏料，当前种子规则不给分。");
+  }
+  if(p.vent<=0) put("f_ventok","hit");
+  else if(p.vent>=2) put("f_ventoverdue","hit");
+  return {facts:facts, notes:notes};
+}
+function simWriteControls(p){
+  function setv(id, v){ if($(id)) $(id).value = v; }
+  setv("simPheno", p.pheno);
+  setv("simRegion", p.region||"");
+  setv("simDist", p.dist||"");
+  setv("simWall", p.wall||"");
+  setv("simMat", p.mat); setv("simMold", p.mold); setv("simShot", p.shot); setv("simInj", p.inj);
+  setv("simAmb", p.amb); setv("simIndex", p.index); setv("simPreheat", p.preheat); setv("simVent", p.vent);
+  cupState = p.cup || "none";
+  simPaintLabels();
+  simPaintCup();
+}
+function simLabel(id, text, out){
+  var el = $("val-"+id); if(!el) return;
+  el.textContent = text;
+  el.className = "sim-val"+(out?" out":"");
+}
+function simPaintLabels(){
+  var p = simRead();
+  simLabel("simMat", p.mat+"℃", p.mat<20||p.mat>25);
+  simLabel("simMold", p.mold+"℃", p.mold<35||p.mold>45);
+  simLabel("simShot", p.shot+"%", p.shot<90||p.shot>110);
+  simLabel("simInj", p.inj+"%", p.inj<90||p.inj>110);
+  simLabel("simAmb", p.amb<1?"偏低":"正常", p.amb<1);
+  simLabel("simIndex", String(p.index), p.index<105||p.index>130);
+  simLabel("simPreheat", p.preheat<=0?"偏低":(p.preheat>=2?"偏高":"正常"), p.preheat<=0||p.preheat>=2);
+  simLabel("simVent", p.vent<=0?"通畅":(p.vent>=2?"堵塞":"未查"), p.vent>=2);
+}
+function simPaintCup(){
+  var box = $("simCup"); if(!box) return;
+  var btns = box.querySelectorAll("button");
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle("on", btns[i].getAttribute("data-s")===cupState);
+}
+function simApplyFacts(derived){
+  SIM_OWNED.concat(SIM_EXTRA_IDS).forEach(function(id){ factState[id]="none"; delete factAuto[id]; });
+  function write(id, st){ if(st) setFact(id, st, 0); }
+  Object.keys(derived.facts).forEach(function(id){ write(id, derived.facts[id]); });
+  Object.keys(simExtra).forEach(function(id){ write(id, simExtra[id]); });
+}
+function simRunEngine(){
+  var pheno = $("selPheno").value || "V-GAS";
+  var scored = buildCandidates(pheno).map(scoreCandidate).sort(function(a,b){ return b.score-a.score; });
+  simPaint(scored);
+  return scored;
+}
+function simPaint(scored){
+  var confBox = $("simConf"), rank = $("simRank"), flip = $("simFlip");
+  if(!confBox || !rank) return;
+  var a = assessConfidence(scored);
+  var top = scored.filter(function(s){ return s.score>0; });
+  var sum = top.reduce(function(n,s){ return n+s.score; }, 0);
+  var leader = top[0];
+  var id = leader ? leader.rule.id : "";
+  var flipped = !!(simLeader && id && simLeader!==id);
+  if(flip){
+    if(flipped){
+      simMarked = id;
+      flip.className = "sim-flip on";
+      flip.textContent = "领先原因变了：从「"+simLeaderName+"」换成「"+leader.rule.cause+"」。";
+    } else if(!simLeader){
+      simMarked = "";
+      flip.className = "sim-flip";
+      flip.textContent = "";
+    }
+  }
+  if(id){ simLeader = id; simLeaderName = leader.rule.cause; }
+  var bare = leader && !leader.details.some(function(d){ return d.type==="sup" || d.type==="cup"; });
+  confBox.innerHTML = '<div class="confbox" style="margin-bottom:10px"><div class="confband '+a.band+'">定案置信 · '+a.title+'</div><div>'+esc(a.text)+(bare?" 第一名没有命中的支持证据，只是先验残分，不要当成这次模拟出来的故障。":"")+'</div></div>';
+  if(!top.length){
+    rank.innerHTML = '<p class="empty-note">没有正分嫌疑。</p>';
+    return;
+  }
+  rank.innerHTML = top.slice(0,4).map(function(s, i){
+    var share = sum>0 ? Math.round(s.score/sum*100) : 0;
+    var cls = "sim-row"+(i===0?" lead":"")+(i===0 && id===simMarked?" is-new":"");
+    return '<button type="button" class="'+cls+'" data-rule="'+s.rule.id+'"><span>'+(i+1)+'. '+esc(s.rule.cause)+(s.near?'<span class="sim-mini"> · 邻近表型</span>':"")+'<span class="sim-mini"> · '+s.rule.id+'</span></span><b>'+share+'% · '+s.score+'分</b></button>';
+  }).join("");
+  var rows = rank.querySelectorAll(".sim-row");
+  for(var i=0;i<rows.length;i++){
+    rows[i].addEventListener("click", function(){ showExplain(this.getAttribute("data-rule")); });
+  }
+}
+function simCommit(){
+  if(simLock || !$("simMat")) return;
+  var p = simRead();
+  simLock = true;
+  $("selPheno").value = p.pheno;
+  $("selRegion").value = p.region;
+  $("selDist").value = p.dist;
+  $("selWall").value = p.wall;
+  syncFromForm();
+  var derived = simDerive(p);
+  simApplyFacts(derived);
+  renderCupSeg();
+  simPaintCup();
+  renderFacts();
+  var warn = $("simWarn");
+  if(warn) warn.textContent = derived.notes.join(" ");
+  simLock = false;
+  simRunEngine();
+}
+function simApplyNamed(name){
+  var p = SIM_PRESETS[name]; if(!p) return;
+  simExtra = p.extra || {};
+  simLock = true;
+  simWriteControls(p);
+  simLock = false;
+  simCommit();
+}
+function simReset(){
+  simExtra = {};
+  simLeader = "";
+  simLeaderName = "";
+  simMarked = "";
+  var flip = $("simFlip"); if(flip){ flip.className = "sim-flip"; flip.textContent = ""; }
+  simApplyNamed("normal");
+}
+SIM_PRESETS.normal = {pheno:"V-GAS", region:"", dist:"", wall:"", cup:"none", mat:22, mold:40, shot:100, inj:100, amb:1, index:115, preheat:1, vent:0, extra:{f_pressok:"hit"}};
+function simMirrorCase(key){
+  var map = {vent:"ventblock", meter:"shortshot", moldtemp:"moldlow"};
+  if(!map[key] || !$("simMat")) return;
+  var p = SIM_PRESETS[map[key]];
+  simExtra = p.extra || {};
+  simLock = true;
+  simWriteControls(p);
+  simLock = false;
+  simCommit();
+}
+function initSimulator(){
+  if(!$("simPheno")) return;
+  var html = "";
+  Object.keys(PHENOS).forEach(function(k){ html += '<option value="'+k+'">'+k+" · "+PHENOS[k].name+'</option>'; });
+  $("simPheno").innerHTML = html;
+  ["simMat","simMold","simShot","simInj","simAmb","simIndex","simPreheat","simVent","simPheno","simRegion","simDist","simWall"].forEach(function(id){
+    var el = $(id); if(!el) return;
+    el.addEventListener("input", function(){ simPaintLabels(); simCommit(); });
+    el.addEventListener("change", function(){ simPaintLabels(); simCommit(); });
+  });
+  var cup = $("simCup");
+  if(cup){
+    var btns = cup.querySelectorAll("button");
+    for(var i=0;i<btns.length;i++){
+      btns[i].addEventListener("click", function(){
+        cupState = this.getAttribute("data-s");
+        renderCupSeg();
+        simPaintCup();
+        simRunEngine();
+      });
+    }
+  }
+  if($("cupSeg")){
+    var mainBtns = $("cupSeg").querySelectorAll("button");
+    for(var j=0;j<mainBtns.length;j++){
+      mainBtns[j].addEventListener("click", function(){
+        simPaintCup();
+        if(!simLock) simRunEngine();
+      });
+    }
+  }
+  document.querySelectorAll("[data-sim]").forEach(function(btn){
+    btn.addEventListener("click", function(){ simApplyNamed(this.getAttribute("data-sim")); });
+  });
+  if($("simReset")) $("simReset").addEventListener("click", simReset);
+  if($("btnReset")) $("btnReset").addEventListener("click", function(){ simMarked = ""; simReset(); });
+  simApplyNamed("normal");
+}
+initSimulator();
 renderFacts();
 drawGraph([]);
 if(/[?&]selftest=1/.test(location.search)){
